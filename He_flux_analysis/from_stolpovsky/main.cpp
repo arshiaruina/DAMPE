@@ -214,10 +214,14 @@ int main( int argc , char *argv[]){
     tree->Branch("stop_z", &stop_z, "stop_z/D");
     Double_t max_dist; // Max distance btw impact points of tracks in first layer of STK
     tree->Branch("max_dist", &max_dist, "max_dist/D");
+    Double_t max_angle; // Max angle between the secondary tracks
+    tree->Branch("max_angle", &max_angle, "max_angle/D");
     Double_t bgo_energy;
     tree->Branch("bgo_energy", &bgo_energy, "bgo_energy/D");
     bool het;
     tree->Branch("het", &het, "het/b");
+    Int_t first_impact_point; // the upper-most impact point among all the tracks
+    tree->Branch("first_impact_point", &first_impact_point, "first_impact_point/I");
 
     // Write some event monitors
     bool interesting_event;
@@ -263,6 +267,8 @@ int main( int argc , char *argv[]){
         bgo_energy = pev->pEvtBgoRec()->GetTotalEnergy();
 
         max_dist = 0.;
+        max_angle = 0.;
+        first_impact_point = 20;
 
         int ibar1_tck0, ibar2_tck0;
 
@@ -270,6 +276,23 @@ int main( int argc , char *argv[]){
         for(int tck = 0; tck < stk_helper->GetSize(); tck++) {
             DmpStkTrack* stktrack = stk_helper->GetTrack(tck);
 
+            int ipp = stktrack->getImpactPointPlane();
+            if(ipp != 0 && ipp < first_impact_point) {
+                first_impact_point = ipp;
+            }
+
+            // if the current track is not the last one
+            if (tck < stk_helper->GetSize() - 1) {
+                for (int tck2 = tck+1; tck2 < stk_helper->GetSize(); tck2++) {
+                    DmpStkTrack * stktrack2 = stk_helper->GetTrack(tck2);
+                    TVector3 dir1 = stktrack -> getDirection();
+                    TVector3 dir2 = stktrack2 -> getDirection();
+                    Double_t a = dir1.Angle(dir2);
+                    if (a > max_angle) max_angle = a;
+                }
+            }
+
+            // if the current track is not the last one and starts at the first STK layer
             if ((tck < stk_helper->GetSize() - 1) && (stktrack->getImpactPointPlane() == 0)) {
                 for (int tck2 = tck+1; tck2 < stk_helper->GetSize(); tck2++) {
                     DmpStkTrack * stktrack2 = stk_helper->GetTrack(tck2);

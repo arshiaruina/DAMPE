@@ -42,7 +42,7 @@ int main(){
 	
 	/* Total energy of event from BGO calorimeter */
 	std::vector<double> energyVec;
-	TH1D *energyHist = new TH1D("energyHist", "allProton-v6r0p0_10TeV_100TeV-HP-p6; Reco energy [MeV]; No. of events", 20,0.,10e6);
+	TH1D *energyHist = new TH1D("energyHist", "allProton-v6r0p0_10TeV_100TeV-HP-p6; Reco energy; No. of events",22,10e5,10e7);
 
 	DmpEvtBgoRec *bgoRec = new DmpEvtBgoRec();
 	tc->SetBranchAddress("DmpEvtBgoRec",&bgoRec);
@@ -52,21 +52,12 @@ int main(){
 	for(int i = 0; i < nEvents; i++){
 	
 		tc->GetEntry(i);
-		double bgoEnergy = bgoRec->GetTotalEnergy();
-		energyVec.push_back(bgoEnergy);
-	}
-	
-	/* Plot the energy histogram */
-	
-	for(unsigned int i = 0; i < energyVec.size(); i++){
-	
-		energyHist->Fill(energyVec.at(i));
-	
+		energyHist->Fill(bgoRec->GetTotalEnergy());
 	}
 	
 	TCanvas c("c", "c", 800, 600);
-	gPad->SetLogy();
-	gPad->SetLogx();
+	c.SetLogy();
+	c.SetLogx();
 	energyHist->Draw();
 	c.SaveAs("../out/energy_histogram.png");
 

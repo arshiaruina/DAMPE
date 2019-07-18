@@ -1,0 +1,2 @@
+dmpinit
+g++ -Wall `root-config --cflags --libs` -I$DMPSWSYS/include -L$DMPSWSYS/lib -lDmpEvent -lDmpService <srcfilename> -o <executable>
