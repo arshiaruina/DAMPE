@@ -39,7 +39,7 @@
 #include "DmpEvtPsdRec.h"
 #include "TStopwatch.h"
 #include "DmpStkClusterCalibration.h"
-
+#include "TSystem.h"
 
 //#include "track_selection.hpp"
 //#include "etacorr.hpp"
@@ -51,6 +51,11 @@ using namespace std;
 
 int main() {
 
+	TStopwatch sw;
+	sw.Start();
+	
+	gSystem->Load("./libDmpEvent.so");
+
         std::ifstream listOfFiles;
 	listOfFiles.open("../resources/20181019.txt"); // one day data
 
@@ -60,8 +65,10 @@ int main() {
         }
 
 	int nFiles = 0;
+	
+	TH1D* hEta = new TH1D("hEta","Eta distribution; #eta; No. of events",50,0.,1.);
 
-        //while(!listOfFiles.eof() && nFiles<1) { // uncomment for analysis run
+        //while(!listOfFiles.eof()) { // uncomment for analysis run
         while(!listOfFiles.eof() && nFiles<1) { // uncomment for debug run
         
 		std::string fileName;
@@ -83,7 +90,7 @@ int main() {
 		std::cout << "No. of events " << t->GetEntries() << std::endl;
 
 		//for (int i = 0; i < t->GetEntries(); i++){ // uncomment for analysis run
-		for (int i = 0; i < 1; i++){ // uncomment for debug run
+		for (int i = 0; i < 100; i++){ // uncomment for debug run
 	
 			std::cout << std::endl;
 			std::cout << "Processing event " << i+1 << std::endl;
@@ -126,12 +133,19 @@ int main() {
 					if(stkcluster->getNstrip()==0) continue;
 					clusterEta = CalcEta(stkcluster);
 					std::cout << "debug 3" << std::endl; 
+					hEta -> Fill(clusterEta);
+					//hEtaEnergy -> Fill(clusterEta, clusterEnergy);
 
 				} // end of loop over clusters
 			} // end of loop over tracks
 		} // end of loop over events
 		nFiles++;
 	} // end of loop over files	
+	TCanvas c("c", "c", 800, 600);
+	hEta -> Draw();
+	c.SaveAs("../out/eta.pdf");
+	sw.Stop();
+	sw.Print();
 } // end of main
 
 
@@ -194,31 +208,53 @@ double CalcEta(DmpStkSiCluster* cluster){
 	std::cout << "Highest signal " << cluster->GetSignal(stripMax1) << std::endl; 
 	//std::cout << cluster->GetSignal(stripMax1+1) << std::endl; 
 	// finding adjacent strip with second-highest signal
-	//if(nStrips==1) --> then eta is set to 0. (biased)
-	if(nStrips==2) {
-		stripMax2 = !stripMax1;
-                sigMax2 = cluster->GetSignal(stripMax2);
+	if(nStrips==1){
+		eta = 0.;//--> then eta is set to 0. (biased)
+		std::cout << "debug me 1" << std::endl;
 	}
 	else {
-		if(cluster->GetSignal(stripMax1 - 1) > cluster->GetSignal(stripMax1 + 1))
+		if(stripMax1==0){ // highest signal strip is first strip of the cluster
+			stripMax2 = 1;
+                	sigMax2 = cluster->GetSignal(stripMax2);
+		}
+		else if(stripMax1==nStrips-1){ // highest signal strip is the last strip of the cluster
 			stripMax2 = stripMax1 - 1;
+                	sigMax2 = cluster->GetSignal(stripMax2);
+		}
+		// so here I have assumed that the next neighbouring strip must contain the second higest signal
+
+		//std::cout << "debug me 2" << std::endl;
+		//if(nStrips==2) {
+		//	std::cout << "debug me 3" << std::endl;
+		//	stripMax2 = !stripMax1;
+                //	sigMax2 = cluster->GetSignal(stripMax2);
+		//}
+		else {
+			std::cout << "debug me 4" << std::endl;
+			if(cluster->GetSignal(stripMax1 - 1) > cluster->GetSignal(stripMax1 + 1)){
+				stripMax2 = stripMax1 - 1;
+				std::cout << "debug me 5" << std::endl;
+			}
+			else {
+				stripMax2 = stripMax1 + 1;
+				std::cout << "debug me 6" << std::endl;
+			}
+			std::cout << "debug me 7" << std::endl;
+			sigMax2 = cluster->GetSignal(stripMax2);
+		}
+		//std::cout << "CalcEta::debug 4" << std::endl; 
+		std::cout << "Strip with second highest signal " << stripMax2 << std::endl; 
+		std::cout << "Second highest signal " << cluster->GetSignal(stripMax2) << std::endl; 
+		// compute eta
+		ch1 = cluster->GetChannelID(stripMax1);
+		ch2 = cluster->GetChannelID(stripMax2);
+		std::cout << "Channel ID of strip with highest signal " << ch1 << std::endl; 
+		std::cout << "Channel ID of strip with second highest signal " << ch2 << std::endl; 
+		if(ch1 > ch2)
+			eta = sigMax1/(sigMax1 + sigMax2);
 		else
-			stripMax2 = stripMax1 + 1;
-		sigMax2 = cluster->GetSignal(stripMax2);
+			eta = sigMax2/(sigMax1 + sigMax2);
 	}
-	//std::cout << "CalcEta::debug 4" << std::endl; 
-	std::cout << "Strip with second highest signal " << stripMax2 << std::endl; 
-	std::cout << "Second highest signal " << cluster->GetSignal(stripMax2) << std::endl; 
-	// compute eta
-	ch1 = cluster->GetChannelID(stripMax1);
-	ch2 = cluster->GetChannelID(stripMax2);
-	std::cout << "Channel ID of strip with highest signal " << ch1 << std::endl; 
-	std::cout << "Channel ID of strip with second highest signal " << ch2 << std::endl; 
-	if(ch1 > ch2)
-		eta = sigMax1/(sigMax1 + sigMax2);
-	else
-		eta = sigMax2/(sigMax1 + sigMax2);
-	
 	std::cout << "Eta for this cluster " << eta << std::endl; 
 	//std::cout << "CalcEta::debug 5" << std::endl; 
 	return eta;
