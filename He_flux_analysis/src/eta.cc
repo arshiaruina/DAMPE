@@ -63,7 +63,8 @@ int main(int argc, char** argv) {
 	t->SetBranchAddress("StkClusterCollection",&stkclusters); // name of the branch
 
 	std::size_t found = inFileName.find_last_of("/");
-	std::cout << found << std::endl;
+	//std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
+	std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
 	TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
 
         TH1D* hEta = new TH1D("hEta","Eta distribution; #eta; No. of events",50,0.,1.);

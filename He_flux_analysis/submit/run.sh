@@ -22,6 +22,10 @@ dampe_init
 
 export LD_LIBRARY_PATH=/cvmfs/dampe.cern.ch/centos7/opt/DMPSW/latest/lib:${LD_LIBRARY_PATH}
 
-./eta.exe $1
+SPLIT_FILE=$1
+while read LINE; do
+	echo $LINE
+	./eta.exe $LINE
+done < $SPLIT_FILE
 
-echo $(date) - All done.
+echo $(date +"%d%m%y_%H%M%S") - All done.
