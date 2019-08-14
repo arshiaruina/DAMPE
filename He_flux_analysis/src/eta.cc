@@ -1,6 +1,10 @@
 /* Code to compute eta values
  * Author: Arshia Ruina
+ * To compile, g++ -Wall `root-config --cflags --libs` -I$DMPSWSYS/include -L$DMPSWSYS/lib -lDmpEvent -lDmpService eta.cc -o ../submit/eta.exe
  * */
+
+// example file
+// /beegfs/dampe/prod/FM/FlightData/2A/20181019/DAMPE_2A_OBS_20181019_20181019T001308_20181019T002610_00000_jEwJChikPnVApmeJU6og.root
 
 #include <iostream>
 #include <fstream>
@@ -20,6 +24,8 @@
 #include "TChain.h"
 #include "TCanvas.h"
 #include "TSystem.h"
+#include "TRandom.h"
+#include "TStyle.h"
 
 #include "DmpEvtHeader.h"
 #include "DmpEvtBgoRaw.h"
@@ -40,73 +46,9 @@
 #include "DmpStkClusterCalibration.h"
 #include "TSystem.h"
 
-#include "../inc/eta.h"
+//#include "../inc/eta.h"
 
 using namespace std;
-
-int main(int argc, char** argv) {
-
-        TStopwatch sw;
-        sw.Start();
-
-        gSystem->Load("./libDmpEvent.so");
-
-	std::string inFileName = argv[1];
-	TFile *f = new TFile(inFileName.c_str());
-	TTree *t = (TTree*)f->Get("CollectionTree");
-
-	TClonesArray* stktracks = new TClonesArray("DmpStkTrack"); //name of the class
-	t->SetBranchAddress("StkKalmanTracks",&stktracks); // name of the branch
-	//DmpStkTrackHelper(TClonesArray* stktracks, bool usebgo = false, DmpEvtBgoRec* bgorec=0, DmpEvtBgoHits* bgohits=0):
-
-	TClonesArray* stkclusters  = new TClonesArray("DmpStkSiCluster"); // name of the class
-	t->SetBranchAddress("StkClusterCollection",&stkclusters); // name of the branch
-
-	std::size_t found = inFileName.find_last_of("/");
-	//std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
-	std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
-	TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
-
-        TH1D* hEta = new TH1D("hEta","Eta distribution; #eta; No. of events",50,0.,1.);
-	//TH2D* hEtaEnergy = new TH2D("hEtaEnergy","Cluster charge distribution; #eta; #frac{dE}{dx} [ADC counts]",50,0.,1.,50,0,200);
-	
-	//for (int i = 0; i < t->GetEntries(); i++){ // uncomment for analysis run
-	for (int i = 0; i < 100; i++){ // uncomment for debug run
-
-		t->GetEntry(i);
-
-		for(int itrack = 0; itrack <= stktracks->GetLast(); itrack++){
-
-			DmpStkTrack* stktrack = (DmpStkTrack*) stktracks->ConstructedAt(itrack);
-			double clusterEnergy = 0.;
-			double clusterEta = 0.;
-			double cosTheta = stktrack->getDirection().CosTheta();
-
-			for (int icluster = 0; icluster < stktrack->GetNPoints(); icluster++) {
-
-				DmpStkSiCluster* stkcluster = (DmpStkSiCluster*) stkclusters->ConstructedAt(icluster);
-				clusterEnergy = stkcluster->getEnergy()*cosTheta;
-				if(stkcluster->getNstrip()==0) continue;
-				clusterEta = CalcEta(stkcluster);
-
-				hEta -> Fill(clusterEta);
-				//... hEtaEnergy -> Fill(clusterEta, clusterEnergy);
-				//... hEtaenergy->Draw("colz");
-
-			} // end of loop over clusters
-		} // end of loop over tracks
-	} // end of loop over events
-	
-	//TCanvas* c1 = new TCanvas("c1", "c1", 800, 600);
-	hEta->Draw();
-	hEta->Write();
-	//outFile->cd();
-	outFile->Write();
-	outFile->Close();
-	std::cout << outFileName << " created." << std::endl;
-	sw.Stop();
-        sw.Print();
-} // end of main
 
 
 double CalcEta(DmpStkSiCluster* cluster){
@@ -169,73 +111,141 @@ double CalcEta(DmpStkSiCluster* cluster){
         return eta;
 }
 
-double CalcIncl(DmpStkTrack* track, std::string dir){
+//double CalcIncl(DmpStkTrack* track, std::string dir){
+int CalcInclIndex(DmpStkTrack* track, std::string dir){
 
 	double maxIncl = 60.;
 	int steps = 12;
 	double incl[steps] = {0.};
 	double theta = 0.;
-	double inclination = 99.;
- 
-	for (int i = 1; i < steps; i++) {
-		incl[i] = incl[i-1] + (maxIncl/steps);
+	//double inclination = 99.;
+	int index = 99; 
+
+	for (int i = 0; i < steps; i++) {
+		incl[i] = i * (maxIncl/steps);
 	}
 
 	if (dir == "x")
-		double theta = atan(track->getTrackParams().getSlopeX());
+		theta = atan(track->getTrackParams().getSlopeX());
 	else if (dir == "y")
-		double theta = atan(track->getTrackParams().getSlopeY());
+		theta = atan(track->getTrackParams().getSlopeY());
+	
+	//double thetaX = atan(track->getTrackParams().getSlopeX());
+	//double thetaY = atan(track->getTrackParams().getSlopeY());
 	
 	theta *= 180./TMath::Pi(); // in deg
+	//thetaX *= 180./TMath::Pi(); // in deg
+	//thetaY *= 180./TMath::Pi(); // in deg
+
+	// use abs value of theta
 	
-	for(int i=0; i<11; i++){
-		if(theta >= incl[i] && theta < incl[i+1]) {
-			inclination = incl[i];
+	for(int i=0; i<12; i++){
+		if(std::abs(theta) >= incl[i] && std::abs(theta) < incl[i]+5.) {
+		//if(thetaX >= incl[i] && thetaX < incl[i+1] && thetaY >= incl[i] && thetaY < incl[i+1]) {
+			//inclination = incl[i];
+			index = i;
 			break;
 		}
 	}
-	return inclination;
+	//return inclination;
+	return index;
 
 }
 
-/*
-void PlotEta(){
+int main(int argc, char** argv) {
 
-        // Input files
+	TStopwatch sw;
+	sw.Start();
 
-        std::string inputFile1 = "/beegfs/dampe/prod/MC/reco/v6r0p0/allProton-v6r0p0_10TeV_100TeV-HP-p6/allProton-v6r0p0_10TeV_100TeV-HP-p6.noOrb.607416.reco.root";
-        std::string inputFile2 = "/beegfs/dampe/prod/MC/reco/v6r0p0/allProton-v6r0p0_10TeV_100TeV-HP-p6/allProton-v6r0p0_10TeV_100TeV-HP-p6.noOrb.601082.reco.root";
-        //TFile *ntuple1 = new TFile(inputFile1.c_str(), "READ");
-        //TFile *ntuple2 = new TFile(inputFile2.c_str(), "READ");
+	//gSystem->Load("./libDmpEvent.so");
 
-        TChain *tc = new TChain("CollectionTree");
-        tc->Add(inputFile1.c_str());
-        tc->Add(inputFile2.c_str());
+	std::string inFileName = argv[1];
+	TFile *f = new TFile(inFileName.c_str());
+	TTree *t = (TTree*)f->Get("CollectionTree");
 
-        // Get entrie
-        int nEvents = tc->GetEntries();
+	//DmpStkTrackHelper(TClonesArray* stktracks, bool usebgo = false, DmpEvtBgoRec* bgorec=0, DmpEvtBgoHits* bgohits=0):
+	
+	TClonesArray* stktracks = new TClonesArray("DmpStkTrack"); //name of the class
+	t->SetBranchAddress("StkKalmanTracks",&stktracks); // name of the branch
 
-        // Total energy of event from BGO calorimeter 
-        std::vector<double> energyVec;
-        TH1D *energyHist = new TH1D("energyHist", "allProton-v6r0p0_10TeV_100TeV-HP-p6; Reco energy; No. of events",22,10e5,10e7);
+	TClonesArray* stkclusters  = new TClonesArray("DmpStkSiCluster"); // name of the class
+	t->SetBranchAddress("StkClusterCollection",&stkclusters); // name of the branch
 
-        DmpEvtBgoRec *bgoRec = new DmpEvtBgoRec();
-        tc->SetBranchAddress("DmpEvtBgoRec",&bgoRec);
+	std::size_t found = inFileName.find_last_of("/");
+	//std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
+	std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
+	TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
 
+        TH1D* hEtaX = new TH1D("hEtaX","Eta distribution for X planes; #eta; No. of events",50,0.,1.);
+        TH1D* hEtaY = new TH1D("hEtaY","Eta distribution for Y planes; #eta; No. of events",50,0.,1.);
 
-        // Loop over all events and store values
+	std::vector<TH2D*> hEtaEnergyVec;
+	for(int ihist = 0; ihist < 12; ihist++){
+		//std::string name = "hEtaEnergy_" + std::to_string(ihist);
+		//std::string title = "Cluster charge distribution " + std::to_string(ihist*5) + "<|#theta_{x,y}|<" + std::to_string((ihist+1)*5);
+		stringstream name, title;
+		name << "hEtaEnergy_" << ihist;
+		title << "Cluster charge distribution " << ihist*5 << "#leq|#theta_{x,y}|<" << (ihist+1)*5;
+		TH2D* hist = new TH2D(name.str().c_str(), ";#eta; #frac{dE}{dx} [ADC counts]",50,0.,1.,50,0.,400.);
+		hist->SetTitle(title.str().c_str());
+		hist->SetOption("COLZ");
+		hist->SetContour(30);
+		hist->SetStats(0);
+		hEtaEnergyVec.push_back(hist);
+	}
 
+	for (int i = 0; i < t->GetEntries(); i++){ // uncomment for analysis run
+	//for (int i = 0; i < 10; i++){ // uncomment for debug run
 
-        for(int i = 0; i < nEvents; i++){
-                tc->GetEntry(i);
-                energyHist->Fill(bgoRec->GetTotalEnergy());
-        }
+		t->GetEntry(i);
 
-        TCanvas c("c", "c", 800, 600);
-        c.SetLogy();
-        c.SetLogx();
-        energyHist->Draw();
-        c.SaveAs("../out/energy_histogram.png");
+		for(int itrack = 0; itrack <= stktracks->GetLast(); itrack++){
 
-}
-*/
+			DmpStkTrack* stktrack = (DmpStkTrack*) stktracks->ConstructedAt(itrack);
+			double cosTheta = stktrack->getDirection().CosTheta();
+
+			for (int icluster = 0; icluster < stktrack->GetNPoints(); icluster++) {
+
+				DmpStkSiCluster* stkcluster = (DmpStkSiCluster*) stkclusters->ConstructedAt(icluster);
+				double clusterEta = 0.;
+				double clusterEnergy = 0.;			
+				//double inclPerp = 0.;			
+				int inclPerpIndex = 0;			
+
+				if(stkcluster->getNstrip()==0) continue;
+
+				clusterEta = CalcEta(stkcluster);
+				if(clusterEta == 0. || clusterEta == 1.) continue;
+				if(stkcluster->isX()){	
+					hEtaX->Fill(clusterEta);
+					inclPerpIndex = CalcInclIndex(stktrack,"y");
+				}
+				if(stkcluster->isY()){
+					hEtaY->Fill(clusterEta);
+					inclPerpIndex = CalcInclIndex(stktrack,"x");
+				}
+				if(inclPerpIndex == 99) continue; //angle is >= 60deg
+				clusterEnergy = stkcluster->getEnergy()*cosTheta;	
+				hEtaEnergyVec.at(inclPerpIndex)->Fill(clusterEta, clusterEnergy);							
+				//hEtaEnergyVec.at(inclPerpIndex)->Draw("colz");
+
+			} // end of loop over clusters
+		} // end of loop over tracks
+	} // end of loop over events
+
+	//TCanvas* c1 = new TCanvas("c1", "c1", 800, 600);
+	//..hEtaX->Draw();
+	//..hEtaY->Write();
+	//..for(int ihist = 0; ihist < 12; ihist++){
+	//..	hEtaEnergyVec.at(ihist)->Draw();	
+	//..	hEtaEnergyVec.at(ihist)->Write();	
+	//..}
+	//.. these lines were resulting in duplicate copies in the rootfile!
+	//outFile->cd();
+	outFile->Write();
+	outFile->Close();
+	std::cout << outFileName << " created." << std::endl;
+	sw.Stop();
+        sw.Print();
+} // end of main
+
