@@ -169,16 +169,19 @@ int main(int argc, char** argv) {
 	TClonesArray* stktracks = new TClonesArray("DmpStkTrack"); //name of the class
 	t->SetBranchAddress("StkKalmanTracks",&stktracks); // name of the branch
 
-	TClonesArray* stkclusters  = new TClonesArray("DmpStkSiCluster"); // name of the class
+	DmpStkTrackHelper* stkhelper = new DmpStkTrackHelper(stktracks,false,0,0);
+
+    TClonesArray* stkclusters  = new TClonesArray("DmpStkSiCluster"); // name of the class
 	t->SetBranchAddress("StkClusterCollection",&stkclusters); // name of the branch
 
 	std::size_t found = inFileName.find_last_of("/");
-	std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
-	//std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
+	//std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
+	std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
 	TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
 
-        TH1D* hEtaX = new TH1D("hEtaX","Eta distribution for X planes; #eta; No. of events",50,0.,1.);
-        TH1D* hEtaY = new TH1D("hEtaY","Eta distribution for Y planes; #eta; No. of events",50,0.,1.);
+    TH1D* hEtaX = new TH1D("hEtaX","Eta distribution for X planes; #eta; No. of events",50,0.,1.);
+    TH1D* hEtaY = new TH1D("hEtaY","Eta distribution for Y planes; #eta; No. of events",50,0.,1.);
+    //TH1D* hTrkChi2 = new TH1D("hTrkChi2","#chi^{2} ndof of tracks; #chi^{2}; No. of events",100,0.,50.);
 
 	std::vector<TH2D*> hEtaEnergyVec;
 	for(int ihist = 0; ihist < 12; ihist++){
@@ -196,21 +199,26 @@ int main(int argc, char** argv) {
 	}
 
 	int nEntries = t->GetEntries();
-	std::cout << "[debug] #entries " << nEntries << std::endl;
 
-	for (int i = 0; i < nEntries; i++){ // uncomment for analysis run
-	//for (int i = 0; i < 6; i++){ // uncomment for debug run
+	//for (int i = 0; i < nEntries; i++){ // uncomment for analysis run
+	for (int i = 0; i < 100; i++){ // uncomment for debug run
 
 		float progress = 100.0 * ((float) i) / ((float) nEntries);
-                //if (!(i % 10)) cout << setprecision(3) << " [ " << progress << " % ] \r";
-                cout << std::setprecision(3) << "[ " << progress << " % ] \r";
+        //if (!(i % 10)) cout << setprecision(3) << " [ " << progress << " % ] \r";
+        std::cout << std::setprecision(3) << "[ " << progress << " % ] \r";
 
 		t->GetEntry(i);
 
-		for(int itrack = 0; itrack <= stktracks->GetLast(); itrack++){
+		stkhelper->SortTracks(4,false); // sorting tracks, trackquality=1,bgomatchcut=false
+		if(stkhelper->GetSize() == 0) continue;
 
-			DmpStkTrack* stktrack = (DmpStkTrack*) stktracks->ConstructedAt(itrack);
+		//for(int itrack = 0; itrack <= stktracks->GetLast(); itrack++){
+		for(int itrack = 0; itrack < stkhelper->GetSize(); itrack++){
+
+			//DmpStkTrack* stktrack = (DmpStkTrack*) stktracks->ConstructedAt(itrack);
+			DmpStkTrack* stktrack = (DmpStkTrack*) stkhelper->GetTrack(itrack);
 			double cosTheta = stktrack->getDirection().CosTheta();
+			//hTrkChi2 -> Fill(stktrack->getChi2NDOF());
 
 			for (int ipoint = 0; ipoint < stktrack->GetNPoints(); ipoint++) {
 	
@@ -221,17 +229,19 @@ int main(int argc, char** argv) {
 				int inclPerpIndex = 0;			
 
 				for(int ixy = 0; ixy < 2; ixy++){
-					if(ixy == 0){
+					if(ixy == 0){ // x cluster at this point
 						stkcluster = stktrack -> GetClusterX(0,stkclusters);
 						if(!stkcluster) continue;
 						clusterEta = CalcEta(stkcluster);
+						if(clusterEta == 0 || clusterEta == 1) continue;
 						hEtaX -> Fill(clusterEta);
 						inclPerpIndex = CalcInclIndex(stktrack,"y");
 					}
-					else{
+					else{ // y cluster at this point
 						stkcluster = stktrack -> GetClusterY(0,stkclusters);
 						if(!stkcluster) continue;
 						clusterEta = CalcEta(stkcluster);
+						if(clusterEta == 0 || clusterEta == 1) continue;
 						hEtaY -> Fill(clusterEta);
 						inclPerpIndex = CalcInclIndex(stktrack,"x");
 					}
@@ -239,7 +249,7 @@ int main(int argc, char** argv) {
 					//if(clusterEta == 0. || clusterEta == 1.) continue;
 					if(inclPerpIndex == 99) continue; //angle is >= 60deg
 					clusterEnergy = stkcluster->getEnergy()*cosTheta;	
-					hEtaEnergyVec.at(inclPerpIndex)->Fill(clusterEta, clusterEnergy);							
+					hEtaEnergyVec.at(inclPerpIndex)->Fill(clusterEta, clusterEnergy);
 					hEtaEnergyVec.at(inclPerpIndex)->Draw("colz");
 				
 				} // end of loop over clusters
