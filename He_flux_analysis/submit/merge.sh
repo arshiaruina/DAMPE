@@ -18,6 +18,8 @@ source /cvmfs/dampe.cern.ch/centos7/etc/setup.sh
 #echo "Sourcing SL6"
 #source /cvmfs/dampe.cern.ch/rhel6-64/etc/setup.sh
 
-hadd -f /beegfs/users/ruina/out/20181019/merged/merged_$(date +"%d%m%y_%H%M%S").root /beegfs/users/ruina/out/20181019/*.root;
-
+#hadd -f /beegfs/users/ruina/out/20181019/merged/merged_$(date +"%d%m%y_%H%M%S").root /beegfs/users/ruina/out/20181019/*.root;
+#for i in /beegfs/users/ruina/out/20181019/*.root;do rm $i;touch $i;done
+hadd -f /beegfs/users/ruina/out/201810/merged/merged_$(date +"%d%m%y_%H%M%S").root /beegfs/users/ruina/out/201810/*.root
+for i in /beegfs/users/ruina/out/201810/*.root;do rm $i;touch $i;done
 echo $(date) - Merge done.
