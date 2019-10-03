@@ -60,8 +60,13 @@
    
 //    private:
 
-        TH1D* hVAEnergyX[N_LADDER][N_VA][N_ETAREG];
-        TH1D* hVAEnergyY[N_LADDER][N_VA][N_ETAREG];
+        TH1D* hVAEnergyX[N_LADDER/2][N_VA][N_ETAREG];
+        TH1D* hVAEnergyY[N_LADDER/2][N_VA][N_ETAREG];
+        int checkCounter[N_LADDER][N_VA] = {0};
+        int total[N_LADDER][N_VA] = {0};
+        //storage for names of the histograms
+        std::vector<std::string> histoNamesX, histoNamesY;
+        //std::stringstream ssX, ssY;
         TH1D* hEtaX;
         TH1D* hEtaY;
         int xLadder             = -99;

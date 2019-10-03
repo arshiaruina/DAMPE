@@ -155,39 +155,36 @@ int main(int argc, char** argv) {
 	std::size_t found = inFileName.find_last_of("/");
     std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
 	//std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
-	//std::string outFileName = "test/" + inFileName.substr(found+1);
+	//std::string outFileName = "../test/" + inFileName.substr(found+1);
 	TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
 
-    hEtaX = new TH1D("hEtaX","Eta distribution for X planes; #eta; No. of events",50,0.,1.);
-    hEtaY = new TH1D("hEtaY","Eta distribution for Y planes; #eta; No. of events",50,0.,1.);
-   
-    for(int iladder = 0; iladder < N_LADDER/2; iladder++) { 
-        if(iladder < 48) {
-            xLadder = iladder+48; // X ladders 48-95 
-            yLadder = iladder;    // Y ladders 0-47
-        }
-        else {
-            xLadder = iladder+96; // X ladders 144-191
-            yLadder = iladder+48; // Y ladders 96-143
-        }
-        for(int iva = 0; iva < N_VA; iva++){
-            for(int ietareg = 0; ietareg < 2; ietareg++){
-                hVAEnergyX[iladder][iva][ietareg] = new TH1D(Form("hVAEnergyX_%d_%d_%d",xLadder,iva,ietareg),Form("Energy for ladder %d X VA %d #eta region %d",xLadder,iva,ietareg),200,0.,200.);
-                hVAEnergyX[iladder][iva][ietareg] -> GetXaxis() -> SetTitle("Cluster energy");
-                hVAEnergyX[iladder][iva][ietareg] -> GetYaxis() -> SetTitle("No. of events");
-                histoNamesX.push_back("hVAEnergyX_" + to_string(xLadder) + "_" + to_string(iva) + "_" + to_string(ietareg));
-                hVAEnergyY[iladder][iva][ietareg] = new TH1D(Form("hVAEnergyY_%d_%d_%d",yLadder,iva,ietareg),Form("Energy for ladder %d Y VA %d #eta region %d",yLadder,iva,ietareg),200,0.,200.);
-                hVAEnergyY[iladder][iva][ietareg] -> GetXaxis() -> SetTitle("Cluster energy");
-                hVAEnergyY[iladder][iva][ietareg] -> GetYaxis() -> SetTitle("No. of events");
-                histoNamesY.push_back("hVAEnergyY_" + to_string(yLadder) + "_" + to_string(iva) + "_" + to_string(ietareg));
-            }
-        }
-    }
-
-    TH1F* hMeasCovXX = new TH1F("hMeasCovXX","MeasCovXX",100,-0.1,0.1);
-    TH1F* hMeasCovYY = new TH1F("hMeasCovYY","MeasCovYY",100,-0.1,0.1);
-    TH1F* hMeasCovXXSqrt = new TH1F("hMeasCovXXSqrt","Sqrt of MeasCovXX",100,-0.1,0.1);
-    TH1F* hMeasCovYYSqrt = new TH1F("hMeasCovYYSqrt","Sqrt of MeasCovYY",100,-0.1,0.1);
+    //hEtaX = new TH1D("hEtaX","Eta distribution for X planes; #eta; No. of events",50,0.,1.);
+    //hEtaY = new TH1D("hEtaY","Eta distribution for Y planes; #eta; No. of events",50,0.,1.);
+    
+    //for(int iladder = 0; iladder < N_LADDER/2; iladder++) { 
+    //    if(iladder < 48) {
+    //        xLadder = iladder+48; // X ladders 48-95 
+    //        yLadder = iladder;    // Y ladders 0-47
+    //    }
+    //    else {
+    //        xLadder = iladder+96; // X ladders 144-191
+    //        yLadder = iladder+48; // Y ladders 96-143
+    //    }
+    //    for(int iva = 0; iva < N_VA; iva++){
+    //        for(int ietareg = 0; ietareg < 2; ietareg++){
+    //            hVAEnergyX[iladder][iva][ietareg] = new TH1D(Form("hVAEnergyX_%d_%d_%d",xLadder,iva,ietareg),Form("Energy for ladder %d X VA %d #eta region %d",xLadder,iva,ietareg),200,0.,200.);
+    //            hVAEnergyX[iladder][iva][ietareg] -> GetXaxis() -> SetTitle("Cluster energy");
+    //            hVAEnergyX[iladder][iva][ietareg] -> GetYaxis() -> SetTitle("No. of events");
+    //            hVAEnergyY[iladder][iva][ietareg] = new TH1D(Form("hVAEnergyY_%d_%d_%d",yLadder,iva,ietareg),Form("Energy for ladder %d Y VA %d #eta region %d",yLadder,iva,ietareg),200,0.,200.);
+    //            hVAEnergyY[iladder][iva][ietareg] -> GetXaxis() -> SetTitle("Cluster energy");
+    //            hVAEnergyY[iladder][iva][ietareg] -> GetYaxis() -> SetTitle("No. of events");
+    //        }
+    //    }
+    //}
+                TH1F* hMeasCovXX = new TH1F("hMeasCovXX","MeasCovXX",100,-0.1,0.1);
+                TH1F* hMeasCovYY = new TH1F("hMeasCovYY","MeasCovYY",100,-0.1,0.1);
+                TH1F* hMeasCovXXSqrt = new TH1F("hMeasCovXXSqrt","Sqrt of MeasCovXX",100,-0.1,0.1);
+                TH1F* hMeasCovYYSqrt = new TH1F("hMeasCovYYSqrt","Sqrt of MeasCovYY",100,-0.1,0.1);
     
 	//.. std::vector<TH2D*> hEtaEnergyVec;
 	//.. for(int ihist = 0; ihist < 12; ihist++){
@@ -207,7 +204,7 @@ int main(int argc, char** argv) {
 	int nEntries = t->GetEntries();
 
 	for (int i = 0; i < nEntries; i++){ // uncomment for analysis run
-	//for (int i = 0; i < 100; i++){ // uncomment for debug run
+	//for (int i = 0; i < 20; i++){ // uncomment for debug run
 
 		float progress = 100.0 * ((float) i) / ((float) nEntries);
         //if (!(i % 10)) cout << setprecision(3) << " [ " << progress << " % ] \r";
@@ -237,64 +234,67 @@ int main(int argc, char** argv) {
                 //int clusterLastStrip = 0;
                 //int clusterVA = 99;
 
+                //std::cout << "----------------" << std::endl;
+                //if(stktrack->hasHitX(ipoint))
+                //    std::cout << "track has real x hit in silicon at point " << ipoint << std::endl;
+                //if(stktrack->hasHitY(ipoint))
+                //    std::cout << "track has real y hit in silicon at point " << ipoint << std::endl;
+                //
+                //std::cout << stktrack->getHitX(ipoint) << " is the x coordinate of the track at point " << ipoint << std::endl;
+                //std::cout << stktrack->getHitY(ipoint) << " is the y coordinate of the track at point " << ipoint << std::endl;
+           
+                //std::cout << stktrack->getHitMeasX(ipoint) << " is the x measured coordinate of the track at point " << ipoint << std::endl;
+                //std::cout << stktrack->getHitMeasY(ipoint) << " is the y measured coordinate of the track at point " << ipoint << std::endl;
+            
                 hMeasCovXX->Fill(stktrack->getMeasCovXX(ipoint));
                 hMeasCovYY->Fill(stktrack->getMeasCovYY(ipoint));
                 hMeasCovXXSqrt->Fill(std::sqrt(stktrack->getMeasCovXX(ipoint)));
                 hMeasCovYYSqrt->Fill(std::sqrt(stktrack->getMeasCovYY(ipoint)));
+                //for(int ixy = 0; ixy < 2; ixy++){
 
-                for(int ixy = 0; ixy < 2; ixy++){
+				//	if(ixy == 0){
+				//		stkcluster = stktrack -> GetClusterX(0,stkclusters);
+				//    }
+                //    else{
+                //        stkcluster = stktrack -> GetClusterY(0,stkclusters);
+                //    }
+            	//	if(!stkcluster) continue;
+				//	
+                //    clusterEnergy = stkcluster -> getEnergy()*cosTheta;
+                //    clusterEta = CalcEta(stkcluster);
 
-					if(ixy == 0){
-						stkcluster = stktrack -> GetClusterX(0,stkclusters);
-				    }
-                    else{
-                        stkcluster = stktrack -> GetClusterY(0,stkclusters);
-                    }
-            		if(!stkcluster) continue;
-					
-                    clusterEnergy = stkcluster -> getEnergy()*cosTheta;
-                    clusterEta = CalcEta(stkcluster);
+                //    if(ixy == 0 /*&& clusterEta != 0 && clusterEta != 1*/) {hEtaX -> Fill(clusterEta); /*std::cout << "cluster X present" << std::endl;*/}
+                //    if(ixy == 1 /*&& clusterEta != 0 && clusterEta != 1*/) {hEtaY -> Fill(clusterEta); /*std::cout << "cluster Y present" << std::endl;*/}
+                //    
+                //    ladderNumber = stkcluster -> getLadderHardware();
+                //    clusterFirstStrip = stkcluster -> getFirstStrip();
+                //    clusterLastStrip = stkcluster -> getLastStrip();
+                //    clusterVA = GetVANumber(clusterFirstStrip, clusterLastStrip);
+                //    clusterEtaReg = GetEtaRegion(clusterEta);
 
-                    if(ixy == 0 /*&& clusterEta != 0 && clusterEta != 1*/) {hEtaX -> Fill(clusterEta); /*std::cout << "cluster X present" << std::endl;*/}
-                    if(ixy == 1 /*&& clusterEta != 0 && clusterEta != 1*/) {hEtaY -> Fill(clusterEta); /*std::cout << "cluster Y present" << std::endl;*/}
-                    
-                    ladderNumber = stkcluster -> getLadderHardware();
-                    clusterFirstStrip = stkcluster -> getFirstStrip();
-                    clusterLastStrip = stkcluster -> getLastStrip();
-                    clusterVA = GetVANumber(clusterFirstStrip, clusterLastStrip);
-                    clusterEtaReg = GetEtaRegion(clusterEta);
+                //    /*------- checking if the low energy peak is caused by clusters on VA edge ----------*/
 
-                    /*------- checks for the low energy peak in the VA charge distribution -------*/
-        
-                    // (1) caused by clusters on VA edge?
+                //    if(IsClusterAtVAEdge(clusterFirstStrip, clusterLastStrip, clusterVA)) continue;
 
-                    //if(IsClusterAtVAEdge(clusterFirstStrip, clusterLastStrip, clusterVA)) continue;
+                //    //std::cout << "cluster ladder: " << ladderNumber << std::endl;
+                //    //std::cout << "cluster VA: " << clusterVA << std::endl;
 
-                    // (2) caused by clusters far off from the reco track?
-                    // setting a cut on the sqrt(MeasCovXX) and sqrt(MeasCovYY) at 0.02
+                //    if(clusterVA < 0 || clusterEtaReg < 0) continue;
+                //    if(IsLadderX1(ladderNumber)) hVAEnergyX[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
+                //    if(IsLadderX2(ladderNumber)) hVAEnergyX[ladderNumber-96][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
+                //    if(IsLadderY1(ladderNumber)) hVAEnergyY[ladderNumber][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
+                //    if(IsLadderY2(ladderNumber)) hVAEnergyY[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
+                //   	
+                //    //inclPerpIndex = CalcInclIndex(stktrack,"y");
+				//	//inclPerpIndex = CalcInclIndex(stktrack,"x");
 
-                    if(std::sqrt(stktrack->getMeasCovYY(ipoint)) > 0.02 || std::sqrt(stktrack->getMeasCovXX(ipoint)) > 0.02) continue;
-
-                    /* -------------------------------------- */
-
-                    //std::cout << "cluster ladder: " << ladderNumber << std::endl;
-                    //std::cout << "cluster VA: " << clusterVA << std::endl;
-
-                    if(clusterVA < 0 || clusterEtaReg < 0) continue;
-                    if(IsLadderX1(ladderNumber)) hVAEnergyX[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
-                    if(IsLadderX2(ladderNumber)) hVAEnergyX[ladderNumber-96][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
-                    if(IsLadderY1(ladderNumber)) hVAEnergyY[ladderNumber][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
-                    if(IsLadderY2(ladderNumber)) hVAEnergyY[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
-                   	//inclPerpIndex = CalcInclIndex(stktrack,"y");
-					//inclPerpIndex = CalcInclIndex(stktrack,"x");
-
-					//if(inclPerpIndex == 99) continue; //angle is >= 60deg
-					//clusterEnergy = stkcluster->getEnergy()*cosTheta;	
-					//hEtaEnergyVec.at(inclPerpIndex)->Fill(clusterEta, clusterEnergy);
-					//hEtaEnergyVec.at(inclPerpIndex)->Draw("colz");
+				//	//if(inclPerpIndex == 99) continue; //angle is >= 60deg
+				//	//clusterEnergy = stkcluster->getEnergy()*cosTheta;	
+				//	//hEtaEnergyVec.at(inclPerpIndex)->Fill(clusterEta, clusterEnergy);
+				//	//hEtaEnergyVec.at(inclPerpIndex)->Draw("colz");
 			
-	                
-    			} // end of loop over clusters
+	            //    
+    			//} // end of loop over clusters
 			} // end of loop over points
 		} // end of loop over tracks
 	} // end of loop over entries
