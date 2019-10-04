@@ -40,8 +40,11 @@ int main(int argc, char** argv) {
         if (key->GetClassName() == classname) {
             TH1D *hist = (TH1D*)key->ReadObj();
             if (hist) {
-                std::cout << hist->GetEntries() << std::endl;
-                outFile->WriteTObject(hist);
+                const char* histName_c = hist->GetName();
+                std::string histName_s(histName_c);
+                if(histName_s.back() == '0')
+                std::cout << hist->GetName() << " " << hist->GetEntries() << std::endl;
+                //outFile->WriteTObject(hist);
                 delete hist;
             }
         }
