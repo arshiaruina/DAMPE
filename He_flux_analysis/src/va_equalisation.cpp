@@ -153,7 +153,8 @@ int main(int argc, char** argv) {
 	t->SetBranchAddress("StkClusterCollection",&stkclusters); // name of the branch
 
 	std::size_t found = inFileName.find_last_of("/");
-    std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
+    std::string outFileName = "../out/201810_wk1/" + inFileName.substr(found+1);
+    //std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
 	//std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
 	//std::string outFileName = "test/" + inFileName.substr(found+1);
 	TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
@@ -175,19 +176,21 @@ int main(int argc, char** argv) {
                 hVAEnergyX[iladder][iva][ietareg] = new TH1D(Form("hVAEnergyX_%d_%d_%d",xLadder,iva,ietareg),Form("Energy for ladder %d X VA %d #eta region %d",xLadder,iva,ietareg),200,0.,200.);
                 hVAEnergyX[iladder][iva][ietareg] -> GetXaxis() -> SetTitle("Cluster energy");
                 hVAEnergyX[iladder][iva][ietareg] -> GetYaxis() -> SetTitle("No. of events");
-                histoNamesX.push_back("hVAEnergyX_" + to_string(xLadder) + "_" + to_string(iva) + "_" + to_string(ietareg));
+                histoNamesX.push_back("hVAEnergyX_" + std::to_string(xLadder) + "_" + std::to_string(iva) + "_" + std::to_string(ietareg));
                 hVAEnergyY[iladder][iva][ietareg] = new TH1D(Form("hVAEnergyY_%d_%d_%d",yLadder,iva,ietareg),Form("Energy for ladder %d Y VA %d #eta region %d",yLadder,iva,ietareg),200,0.,200.);
                 hVAEnergyY[iladder][iva][ietareg] -> GetXaxis() -> SetTitle("Cluster energy");
                 hVAEnergyY[iladder][iva][ietareg] -> GetYaxis() -> SetTitle("No. of events");
-                histoNamesY.push_back("hVAEnergyY_" + to_string(yLadder) + "_" + to_string(iva) + "_" + to_string(ietareg));
+                histoNamesY.push_back("hVAEnergyY_" + std::to_string(yLadder) + "_" + std::to_string(iva) + "_" + std::to_string(ietareg));
             }
         }
     }
 
-    TH1F* hMeasCovXX = new TH1F("hMeasCovXX","MeasCovXX",100,-0.1,0.1);
-    TH1F* hMeasCovYY = new TH1F("hMeasCovYY","MeasCovYY",100,-0.1,0.1);
-    TH1F* hMeasCovXXSqrt = new TH1F("hMeasCovXXSqrt","Sqrt of MeasCovXX",100,-0.1,0.1);
-    TH1F* hMeasCovYYSqrt = new TH1F("hMeasCovYYSqrt","Sqrt of MeasCovYY",100,-0.1,0.1);
+    //TH1F* hMeasCovXX = new TH1F("hMeasCovXX","MeasCovXX",100,-0.1,0.1);
+    //TH1F* hMeasCovYY = new TH1F("hMeasCovYY","MeasCovYY",100,-0.1,0.1);
+    //TH1F* hMeasCovXXSqrt = new TH1F("hMeasCovXXSqrt","Sqrt of MeasCovXX",100,-0.1,0.1);
+    //TH1F* hMeasCovYYSqrt = new TH1F("hMeasCovYYSqrt","Sqrt of MeasCovYY",100,-0.1,0.1);
+    TH1F* hDistanceX = new TH1F("hDistanceX","|MeasHitX - FiltHitX|",100,0.,0.5);
+    TH1F* hDistanceY = new TH1F("hDistanceY","|MeasHitY - FiltHitY|",100,0.,0.5);
     
 	//.. std::vector<TH2D*> hEtaEnergyVec;
 	//.. for(int ihist = 0; ihist < 12; ihist++){
@@ -237,18 +240,22 @@ int main(int argc, char** argv) {
                 //int clusterLastStrip = 0;
                 //int clusterVA = 99;
 
-                hMeasCovXX->Fill(stktrack->getMeasCovXX(ipoint));
-                hMeasCovYY->Fill(stktrack->getMeasCovYY(ipoint));
-                hMeasCovXXSqrt->Fill(std::sqrt(stktrack->getMeasCovXX(ipoint)));
-                hMeasCovYYSqrt->Fill(std::sqrt(stktrack->getMeasCovYY(ipoint)));
+                //hMeasCovXX->Fill(stktrack->getMeasCovXX(ipoint));
+                //hMeasCovYY->Fill(stktrack->getMeasCovYY(ipoint));
+                //hMeasCovXXSqrt->Fill(std::sqrt(stktrack->getMeasCovXX(ipoint)));
+                //hMeasCovYYSqrt->Fill(std::sqrt(stktrack->getMeasCovYY(ipoint)));
 
                 for(int ixy = 0; ixy < 2; ixy++){
 
 					if(ixy == 0){
-						stkcluster = stktrack -> GetClusterX(0,stkclusters);
+						stkcluster = stktrack -> GetClusterX(ipoint,stkclusters);
+                        //filling hDistanceX here without rejecting events with E < 20
+                        hDistanceX -> Fill(std::abs(stktrack->getHitMeasX(ipoint) - stktrack->getHitX(ipoint)));
 				    }
                     else{
-                        stkcluster = stktrack -> GetClusterY(0,stkclusters);
+                        stkcluster = stktrack -> GetClusterY(ipoint,stkclusters);
+                        //filling hDistanceY here without rejecting events with E < 20
+                        hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));
                     }
             		if(!stkcluster) continue;
 					
@@ -273,7 +280,7 @@ int main(int argc, char** argv) {
                     // (2) caused by clusters far off from the reco track?
                     // setting a cut on the sqrt(MeasCovXX) and sqrt(MeasCovYY) at 0.02
 
-                    if(std::sqrt(stktrack->getMeasCovYY(ipoint)) > 0.02 || std::sqrt(stktrack->getMeasCovXX(ipoint)) > 0.02) continue;
+                    //if(std::sqrt(stktrack->getMeasCovYY(ipoint)) > 0.02 || std::sqrt(stktrack->getMeasCovXX(ipoint)) > 0.02) continue;
 
                     /* -------------------------------------- */
 
