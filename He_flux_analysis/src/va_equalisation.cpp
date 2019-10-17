@@ -153,7 +153,8 @@ int main(int argc, char** argv) {
 	t->SetBranchAddress("StkClusterCollection",&stkclusters); // name of the branch
 
 	std::size_t found = inFileName.find_last_of("/");
-    std::string outFileName = "../out/201810_wk1/" + inFileName.substr(found+1);
+    //std::string outFileName = "../out/20181001_20181009/" + inFileName.substr(found+1);
+    std::string outFileName = "../out/20181001_20181009_1/" + inFileName.substr(found+1);
     //std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
 	//std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
 	//std::string outFileName = "test/" + inFileName.substr(found+1);
@@ -250,12 +251,12 @@ int main(int argc, char** argv) {
 					if(ixy == 0){
 						stkcluster = stktrack -> GetClusterX(ipoint,stkclusters);
                         //filling hDistanceX here without rejecting events with E < 20
-                        hDistanceX -> Fill(std::abs(stktrack->getHitMeasX(ipoint) - stktrack->getHitX(ipoint)));
+                        //hDistanceX -> Fill(std::abs(stktrack->getHitMeasX(ipoint) - stktrack->getHitX(ipoint)));
 				    }
                     else{
                         stkcluster = stktrack -> GetClusterY(ipoint,stkclusters);
                         //filling hDistanceY here without rejecting events with E < 20
-                        hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));
+                        //hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));
                     }
             		if(!stkcluster) continue;
 					
@@ -264,7 +265,10 @@ int main(int argc, char** argv) {
 
                     if(ixy == 0 /*&& clusterEta != 0 && clusterEta != 1*/) {hEtaX -> Fill(clusterEta); /*std::cout << "cluster X present" << std::endl;*/}
                     if(ixy == 1 /*&& clusterEta != 0 && clusterEta != 1*/) {hEtaY -> Fill(clusterEta); /*std::cout << "cluster Y present" << std::endl;*/}
-                    
+
+                    if(ixy == 0 && clusterEnergy > 20.) {hDistanceX -> Fill(std::abs(stktrack->getHitMeasX(ipoint) - stktrack->getHitX(ipoint)));}
+                    if(ixy == 1 && clusterEnergy > 20.) {hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));}
+                
                     ladderNumber = stkcluster -> getLadderHardware();
                     clusterFirstStrip = stkcluster -> getFirstStrip();
                     clusterLastStrip = stkcluster -> getLastStrip();

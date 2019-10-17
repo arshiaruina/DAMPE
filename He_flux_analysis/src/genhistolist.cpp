@@ -13,7 +13,8 @@ int main(int argc, char** argv) {
 
     stringstream name;
     ofstream of;
-    of.open("histolist.txt");
+    //of.open("histolist.txt");
+    of.open("histolist_new.txt");
     int xLadder, yLadder;
 
     /* Storing histo names in vectors */
@@ -29,14 +30,18 @@ int main(int argc, char** argv) {
             yLadder = iladder+48; // Y ladders 96-143
         }
         for(int iva = 0; iva < N_VA; iva++){
-            for(int ietareg = 0; ietareg < 2; ietareg++){
-                histoNamesX.push_back("hVAEnergyX_" + to_string(xLadder) + "_" + to_string(iva) + "_" + to_string(ietareg));
-                histoNamesY.push_back("hVAEnergyY_" + to_string(yLadder) + "_" + to_string(iva) + "_" + to_string(ietareg));
+            //for(int ietareg = 0; ietareg < 2; ietareg++){
+                
+                histoNamesX.push_back("hVAEnergyX_" + to_string(xLadder) + "_" + to_string(iva));
+                histoNamesY.push_back("hVAEnergyY_" + to_string(yLadder) + "_" + to_string(iva));
+
+                //histoNamesX.push_back("hVAEnergyX_" + to_string(xLadder) + "_" + to_string(iva) + "_" + to_string(ietareg));
+                //histoNamesY.push_back("hVAEnergyY_" + to_string(yLadder) + "_" + to_string(iva) + "_" + to_string(ietareg));
 
                 //name << "hVAEnergyX_" << xLadder << "_" << iva << "_" << ietareg << endl;
                 //name << "hVAEnergyY_" << yLadder << "_" << iva << "_" << ietareg << endl;
                 iName++;
-            }
+            //}
         }
     }
 
@@ -55,6 +60,9 @@ int main(int argc, char** argv) {
     //for(int i = 0; i < 1152; i++){
         //cout << histoNamesX[i] << endl;
         of << histoNamesX.at(i) << endl;
+        //of << histoNamesY.at(i) << endl;
+    }
+    for(unsigned int i = 0; i < histoNamesY.size(); i++){
         of << histoNamesY.at(i) << endl;
     }
     
