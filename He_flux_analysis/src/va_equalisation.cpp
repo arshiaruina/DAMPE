@@ -7,8 +7,65 @@
 // /beegfs/dampe/prod/FM/FlightData/2A/20181019/DAMPE_2A_OBS_20181019_20181019T001308_20181019T002610_00000_jEwJChikPnVApmeJU6og/DAMPE_2A_OBS_20181019_20181019T001308_20181019T002610_00000_jEwJChikPnVApmeJU6og.root
 
 #include "../inc/va_equalisation.h"
+//#include "../inc/track_selection.hpp"
 
 using namespace std;
+
+
+bool** read_bad_channels_file(const char* filename){
+    bool** badchannels = new bool*[N_LADDER];
+    for(int i=0; i<N_LADDER; i++){
+        badchannels[i] = new bool[N_CHANNEL];
+        for(int j=0; j<N_CHANNEL; j++){
+            badchannels[i][j] = false;
+        }
+    }
+
+    ifstream infile(filename);
+    if (!infile)
+    {
+        std::cout<<"Can't open Bad Channels file: "<<filename<<" ==> throwing exception!"<<std::endl;
+        throw;
+    }
+    std::string line;
+    while (getline(infile, line)) {
+        if (line.c_str() == std::string("")) break;
+        std::istringstream lineStream(line.c_str());
+        std::string number;
+        int i = 0;
+        int ildr   = -1;
+        int bdchnl = -1;
+        while (getline(lineStream, number, ',')) {
+            switch (i++) {
+            case 0:
+                ildr = atoi(number.c_str());
+                break;
+            case 1:
+                bdchnl = atoi(number.c_str());
+                break;
+            }
+        }
+        if(ildr>=0 && bdchnl>=0 && ildr<N_LADDER && bdchnl<N_CHANNEL){
+            badchannels[ildr][bdchnl] = true;
+        }
+    }
+    std::cout<<"Done reading bad channels"<<std::endl;
+    return badchannels;
+} // end read_bad_channels_file
+
+
+bool is_cluster_bad_channel(DmpStkSiCluster * cluster, bool** badchannels) {
+    int ladder = cluster->getLadderHardware(); //ladder num
+    int minc = cluster->getIndex1();//address of the first strip in the cluster (0-363)
+    int maxc = cluster->getIndex1() + cluster->getNstrip() -1;//last strip of the cluster
+
+    for(int i = minc; i <= maxc; i++){
+        if(badchannels[ladder][i]) return true;
+    }
+    return false;
+} // end is_cluster_bad_channel
+
+
 
 int GetEtaRegion(double eta){
     
@@ -137,11 +194,16 @@ int main(int argc, char** argv) {
 	TStopwatch sw;
 	sw.Start();
 
+    //int nClustersWithHotStrips = 0;
+
 	//gSystem->Load("./libDmpEvent.so");
 
 	std::string inFileName = argv[1];
 	TFile *f = new TFile(inFileName.c_str());
 	TTree *t = (TTree*)f->Get("CollectionTree");
+
+    // Bad channels list
+    bool** badchannels =  read_bad_channels_file("../resources/bad_chan.txt");
 	
     TClonesArray* stktracks = new TClonesArray("DmpStkTrack"); //name of the class
 	t->SetBranchAddress("StkKalmanTracks",&stktracks); // name of the branch
@@ -152,12 +214,26 @@ int main(int argc, char** argv) {
     TClonesArray* stkclusters  = new TClonesArray("DmpStkSiCluster"); // name of the class
 	t->SetBranchAddress("StkClusterCollection",&stkclusters); // name of the branch
 
+    /* =====================================================
+    
+     Before submitting a job, check:
+    
+     -> input filename
+     -> input file location
+     -> output filename
+     -> output file location
+     -> number of entries looped over
+     -> print statements
+     
+    ===================================================== */
+
+
 	std::size_t found = inFileName.find_last_of("/");
     //std::string outFileName = "../out/20181001_20181009/" + inFileName.substr(found+1);
-    std::string outFileName = "../out/20181001_20181009_1/" + inFileName.substr(found+1);
+    //std::string outFileName = "../out/20181001_20181009_1/" + inFileName.substr(found+1);
     //std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
 	//std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
-	//std::string outFileName = "test/" + inFileName.substr(found+1);
+	std::string outFileName = "../test/" + inFileName.substr(found+1);
 	TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
 
     hEtaX = new TH1D("hEtaX","Eta distribution for X planes; #eta; No. of events",50,0.,1.);
@@ -186,13 +262,18 @@ int main(int argc, char** argv) {
         }
     }
 
-    //TH1F* hMeasCovXX = new TH1F("hMeasCovXX","MeasCovXX",100,-0.1,0.1);
-    //TH1F* hMeasCovYY = new TH1F("hMeasCovYY","MeasCovYY",100,-0.1,0.1);
-    //TH1F* hMeasCovXXSqrt = new TH1F("hMeasCovXXSqrt","Sqrt of MeasCovXX",100,-0.1,0.1);
-    //TH1F* hMeasCovYYSqrt = new TH1F("hMeasCovYYSqrt","Sqrt of MeasCovYY",100,-0.1,0.1);
-    TH1F* hDistanceX = new TH1F("hDistanceX","|MeasHitX - FiltHitX|",100,0.,0.5);
-    TH1F* hDistanceY = new TH1F("hDistanceY","|MeasHitY - FiltHitY|",100,0.,0.5);
-    
+    //TH1F* hMeasCovXX 		= new TH1F("hMeasCovXX","MeasCovXX",100,-0.1,0.1);
+    //TH1F* hMeasCovYY 		= new TH1F("hMeasCovYY","MeasCovYY",100,-0.1,0.1);
+    //TH1F* hMeasCovXXSqrt 	= new TH1F("hMeasCovXXSqrt","Sqrt of MeasCovXX",100,-0.1,0.1);
+    //TH1F* hMeasCovYYSqrt 	= new TH1F("hMeasCovYYSqrt","Sqrt of MeasCovYY",100,-0.1,0.1);
+    //TH1F* hDistanceX 		= new TH1F("hDistanceX","|MeasHitX - FiltHitX|",100,0.,0.5);
+    //TH1F* hDistanceY 		= new TH1F("hDistanceY","|MeasHitY - FiltHitY|",100,0.,0.5);
+    //TH1I* hNoisyClusters 	= new TH1I("hNoisyClusters","Clusters with a noisy channel",1,0,1);    
+    TH1I* hNTracksNoCuts 	= new TH1I("hNTracksNoCuts","No. of tracks with no selection cuts",10,0,10);    
+    TH1I* hNTracks 			= new TH1I("hNTracks","No. of tracks that passed all cuts",10,0,10);    
+    TH1D* hSmeanX 			= new TH1D("hSmeanX","hSmeanX",50,0.,5.);    
+    TH1D* hSmeanY 			= new TH1D("hSmeanY","hSmeanY",50,0.,5.);    
+
 	//.. std::vector<TH2D*> hEtaEnergyVec;
 	//.. for(int ihist = 0; ihist < 12; ihist++){
 	//.. 	//std::string name = "hEtaEnergy_" + std::to_string(ihist);
@@ -210,6 +291,8 @@ int main(int argc, char** argv) {
 
 	int nEntries = t->GetEntries();
 
+    std::cout << "variables set, starting loop over entries..." << std::endl;
+
 	for (int i = 0; i < nEntries; i++){ // uncomment for analysis run
 	//for (int i = 0; i < 100; i++){ // uncomment for debug run
 
@@ -219,16 +302,109 @@ int main(int argc, char** argv) {
 
 		t->GetEntry(i);
 
-		stkhelper->SortTracks(4,false); // sorting tracks, trackquality=1,bgomatchcut=false
-		if(stkhelper->GetSize() == 0) continue;
+		hNTracksNoCuts->Fill(stkhelper->GetSize());
+		stkhelper->SortTracks(4,false); // sorting tracks, trackquality=1,bgomatchcut=false		
+        if(stkhelper->GetSize() == 0) continue;
+        std::vector<int> vTrackIndex;
+
+        //std::cout << "track loop to make selections" << std::endl;
 
 		//for(int itrack = 0; itrack <= stktracks->GetLast(); itrack++){
-		for(int itrack = 0; itrack < stkhelper->GetSize(); itrack++){
+		for(int itrack = 0; itrack < stkhelper->GetSize(); itrack++){ // track loop to make selections
 
 			//DmpStkTrack* stktrack = (DmpStkTrack*) stktracks->ConstructedAt(itrack);
 			DmpStkTrack* stktrack = (DmpStkTrack*) stkhelper->GetTrack(itrack);
 			/*double*/ cosTheta = stktrack->getDirection().CosTheta();
 
+            int nClusterX = 0;
+            int nClusterY = 0;
+            double sMeanX = 0.;
+            double sMeanY = 0.;
+
+            // 2a. track made with 6 hits
+
+            if(stktrack->getNhitXY() < MINTRACKHITS) continue;
+    
+			for (int ipoint = 0; ipoint < stktrack->GetNPoints(); ipoint++) {
+	
+				DmpStkSiCluster* stkcluster;
+
+                for(int ixy = 0; ixy < 2; ixy++){
+
+					if(ixy == 0){
+						stkcluster = stktrack -> GetClusterX(ipoint,stkclusters);
+                        //filling hDistanceX here without rejecting events with E < 20
+                        //hDistanceX -> Fill(std::abs(stktrack->getHitMeasX(ipoint) - stktrack->getHitX(ipoint)));
+				    }
+                    else{
+                        stkcluster = stktrack -> GetClusterY(ipoint,stkclusters);
+                        //filling hDistanceY here without rejecting events with E < 20
+                        //hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));
+                    }
+            		if(!stkcluster) continue;
+		
+                    clusterFirstStrip = stkcluster -> getFirstStrip();
+                    clusterLastStrip = stkcluster -> getLastStrip();
+  					
+                    // 1. remove clusters with noisy channels
+                    if(is_cluster_bad_channel(stkcluster, badchannels)) continue;          
+          
+                    clusterEnergy = stkcluster->getEnergy()*cosTheta;
+                    clusterEta = CalcEta(stkcluster);
+
+                    if(ixy == 0 /*&& clusterEta != 0 && clusterEta != 1*/) {
+                        nClusterX++;
+                        sMeanX += clusterEnergy;
+                        /*hEtaX -> Fill(clusterEta); std::cout << "cluster X present" << std::endl;*/
+                    }
+                    if(ixy == 1 /*&& clusterEta != 0 && clusterEta != 1*/) {
+                        nClusterY++;
+                        sMeanY += clusterEnergy;
+                        /*hEtaY -> Fill(clusterEta); std::cout << "cluster Y present" << std::endl;*/}
+	                
+    			} // end of loop over x and y clusters
+			} // end of loop over points
+	    
+			// 2b. has 6 clusters
+			if(nClusterX < 6 || nClusterY < 6) continue;
+
+			// 3. |Z| = 1
+        	sMeanX = std::sqrt(sMeanX/nClusterX/60.);
+        	sMeanY = std::sqrt(sMeanY/nClusterY/60.);
+
+            hSmeanX->Fill(sMeanX);
+            hSmeanY->Fill(sMeanY);
+
+        	//if(!(sMeanX > 0.92 && sMeanX < 0.96 && sMeanY > 0.92 && sMeanY < 0.96)) continue;
+        	if(sMeanX < .9 || sMeanX > 1.1) continue;
+            if(sMeanY < .9 || sMeanY > 1.1) continue;
+
+        	vTrackIndex.push_back(itrack);
+        	hNTracks->Fill(vTrackIndex.size());
+
+
+    	} // end of loop over tracks
+
+    	if(vTrackIndex.empty()) continue;
+
+        //std::cout << "track loop " << std::endl;
+
+    	// loop over selected tracks
+    	for(unsigned int itrack = 0; itrack < vTrackIndex.size(); itrack++){
+    	//for(int itrack = 0; itrack < stkhelper->GetSize(); itrack++){
+
+			//DmpStkTrack* stktrack = (DmpStkTrack*) stktracks->ConstructedAt(itrack);
+			DmpStkTrack* stktrack = (DmpStkTrack*) stkhelper->GetTrack(itrack);
+			/*double*/ cosTheta = stktrack->getDirection().CosTheta();
+
+            //int nClusterX = 0;
+            //int nClusterY = 0;
+            //double sMeanX = 0.;
+            //double sMeanY = 0.;
+
+            // 2. Sel Cut
+            //if(stktrack->getNhitXY() < MINTRACKHITS) continue;
+    
 			for (int ipoint = 0; ipoint < stktrack->GetNPoints(); ipoint++) {
 	
 				DmpStkSiCluster* stkcluster;
@@ -259,19 +435,48 @@ int main(int argc, char** argv) {
                         //hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));
                     }
             		if(!stkcluster) continue;
-					
-                    clusterEnergy = stkcluster -> getEnergy()*cosTheta;
-                    clusterEta = CalcEta(stkcluster);
-
-                    if(ixy == 0 /*&& clusterEta != 0 && clusterEta != 1*/) {hEtaX -> Fill(clusterEta); /*std::cout << "cluster X present" << std::endl;*/}
-                    if(ixy == 1 /*&& clusterEta != 0 && clusterEta != 1*/) {hEtaY -> Fill(clusterEta); /*std::cout << "cluster Y present" << std::endl;*/}
-
-                    if(ixy == 0 && clusterEnergy > 20.) {hDistanceX -> Fill(std::abs(stktrack->getHitMeasX(ipoint) - stktrack->getHitX(ipoint)));}
-                    if(ixy == 1 && clusterEnergy > 20.) {hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));}
-                
-                    ladderNumber = stkcluster -> getLadderHardware();
+		
                     clusterFirstStrip = stkcluster -> getFirstStrip();
                     clusterLastStrip = stkcluster -> getLastStrip();
+  
+                    //if(is_cluster_bad_channel(stkcluster, badchannels)) continue;
+ 
+                    //--------------- Selection Cuts ----------------//
+                 
+                    // From Stefania's thesis, Section 3.2.5 
+                
+                    // 1. Remove if cluster contains a noisy channel
+                    //bool foundNoisyCluster = false;
+                    //for(int istrip = clusterfirstStrip; istrip <= clusterLastStrip; istrip++){
+	    	        //    if(stkcluster->GetNoise(istrip) > 3.){
+                    //            hNoisyClusters->Fill();
+                    //            foundNoisyCluster = true;
+                    //            break;
+                    //    }
+                    //}    
+                    //if(foundNoisyCluster) continue;    
+	
+                    // 2. reco with 6 hits on the XZ and YZ planes -- immediately at the start of loop over tracks 
+
+                    // 3. |Z|=1            
+          
+                    clusterEnergy = stkcluster->getEnergy()*cosTheta;
+                    clusterEta = CalcEta(stkcluster);
+
+                    //if(ixy == 0 /*&& clusterEta != 0 && clusterEta != 1*/) {
+                    //    nClusterX++;
+                    //    sMeanX += clusterEnergy();
+                    //    /*hEtaX -> Fill(clusterEta); std::cout << "cluster X present" << std::endl;*/
+                    //}
+                    //if(ixy == 1 /*&& clusterEta != 0 && clusterEta != 1*/) {
+                    //    nClusterY++;
+                    //    sMeanY += clusterEnergy();
+                    //    /*hEtaY -> Fill(clusterEta); std::cout << "cluster Y present" << std::endl;*/}
+
+                    //if(ixy == 0 && clusterEnergy > 20.) {hDistanceX -> Fill(std::abs(stktrack->getHitMeasX(ipoint) - stktrack->getHitX(ipoint)));}
+                    //if(ixy == 1 && clusterEnergy > 20.) {hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));}
+                
+                    ladderNumber = stkcluster->getLadderHardware();
                     clusterVA = GetVANumber(clusterFirstStrip, clusterLastStrip);
                     clusterEtaReg = GetEtaRegion(clusterEta);
 
@@ -305,9 +510,14 @@ int main(int argc, char** argv) {
 					//hEtaEnergyVec.at(inclPerpIndex)->Draw("colz");
 			
 	                
-    			} // end of loop over clusters
+    			} // end of loop over x and y clusters
 			} // end of loop over points
-		} // end of loop over tracks
+	    
+        	//sMeanX = std::sqrt(sMeanX/nClusterX/60.);
+        	//sMeanY = std::sqrt(sMeanY/nClusterY/60.);
+
+    	} // end of loop over tracks
+
 	} // end of loop over entries
 
     //std::cout << "making checkfile" << std::endl;
@@ -342,8 +552,12 @@ int main(int argc, char** argv) {
 	//outFile->cd();
 	outFile->Write();
 	outFile->Close();
-	std::cout << outFileName << " created." << std::endl;
+	if (outFile->IsZombie())
+        std::cout << "Error opening output file!" << std::endl;
+    else
+        std::cout << outFileName << " created." << std::endl;
 	sw.Stop();
     sw.Print();
 } // end of main
+
 
