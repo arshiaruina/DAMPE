@@ -184,74 +184,8 @@ Int_t langaupro(Double_t *params, Double_t &maxx, Double_t &FWHM) {
    return (0);
 }
 
-//int main(int argc, char** argv) {
-int main() {
-
-
-//    //std::ifstream histFile;
-//    //histFile.open("histolist_new.txt");
-//    std::string histName = "hVAEnergyX_154_2_0";
-//    //std::string inFileName = argv[1];
-//    std::string inFileName = "/beegfs/users/ruina/VAequalisation/out/20181019/merged/merged_160919_104734.root";
-//    TFile *inFile = new TFile(inFileName.c_str());
-//    //TH1D *hist0 = (TH1D*)inFile->Get(histName0.c_str());
-//    TH1D *hSNR = (TH1D*)inFile->Get(histName.c_str());
-//
-//    TFile *outFile = new TFile("langaufit.root", "RECREATE");
-//    TCanvas *c1 = new TCanvas("c1",histName.c_str(),800,600);
-//
-//
-//    // Fill Histogram
-//    //Int_t data[100] = {0,0,0,0,0,0,2,6,11,18,18,55,90,141,255,323,454,563,681,
-//    //                 737,821,796,832,720,637,558,519,460,357,291,279,241,212,
-//    //                 153,164,139,106,95,91,76,80,80,59,58,51,30,49,23,35,28,23,
-//    //                 22,27,27,24,20,16,17,14,20,12,12,13,10,17,7,6,12,6,12,4,
-//    //                 9,9,10,3,4,5,2,4,1,5,5,1,7,1,6,3,3,3,4,5,4,4,2,2,7,2,4};
-//    //TH1F *hSNR = new TH1F("snr","Signal-to-noise",400,0,400);
-//    //for (Int_t i=0; i<100; i++) hSNR->Fill(i,data[i]);
-//    // Fitting SNR histo
-//    printf("Fitting...\n");
-//    // Setting fit range and start values
-//    Double_t fr[2];
-//    Double_t sv[4], pllo[4], plhi[4], fp[4], fpe[4];
-//    //fr[0]=0.3*hSNR->GetMean();
-//    //fr[1]=3.0*hSNR->GetMean();
-//
-//    //double fr[2], sv[4], pllo[4], plhi[4];
-//    //fr[0] = 40.;      fr[1] = 150.;
-//    //sv[0] = 2.;       sv[1] = 50.;       sv[2] = 2e5;      sv[3] = 3.;    
-//    //pllo[0] = 0.;     pllo[1] = 10.;     pllo[2] = 1e4;    pllo[3] = 0.;  
-//    //plhi[0] = 10.;    plhi[1] = 1e5;     plhi[2] = 1e6;    plhi[3] = 1e5; 
-//
-//
-//    fr[0] = 0.;      fr[1] = 180.;
-//    pllo[0]=0.5; pllo[1]=10.0; pllo[2]=1.0;         pllo[3]=0.4;
-//    plhi[0]=5.0; plhi[1]=70.0; plhi[2]=1000000.0;   plhi[3]=5.0;
-//    sv[0]=1.8;   sv[1]=50.0;   sv[2]=50000.0;       sv[3]=3.0;
-//
-//    //pllo[0]=0.5; pllo[1]=5.0; pllo[2]=1.0; pllo[3]=0.4;
-//    //plhi[0]=5.0; plhi[1]=50.0; plhi[2]=1000000.0; plhi[3]=5.0;
-//    //sv[0]=1.8; sv[1]=20.0; sv[2]=50000.0; sv[3]=3.0;
-//    Double_t chisqr;
-//    Int_t    ndf;
-//    TF1 *fitsnr = langaufit(hSNR,fr,sv,pllo,plhi,fp,fpe,&chisqr,&ndf);
-//    Double_t SNRPeak, SNRFWHM;
-//    langaupro(fp,SNRPeak,SNRFWHM);
-//    printf("Fitting done\nPlotting results...\n");
-//    // Global style settings
-//    gStyle->SetOptStat(1111);
-//    gStyle->SetOptFit(111);
-//    gStyle->SetLabelSize(0.03,"x");
-//    gStyle->SetLabelSize(0.03,"y");
-//    hSNR->GetXaxis()->SetRange(0,70);
-//    hSNR->Draw();
-//    fitsnr->Draw("hist same");
-//    c1->Print();
-//    outFile->WriteTObject(c1);
-//    outFile->Write();
-//    outFile->Close();
-//}
-
+int main(int argc, char** argv) {
+//int main() {
 
 /* TODO:
  * Access the generated (merged) file.root which has the histograms of the energy distributions for all VAs
@@ -266,25 +200,24 @@ int main() {
 	//sw.Start();
 
     //double MPV[1152][2] = {0.};
-    TH1D *hMPV0 = new TH1D("hMPV0","MPV of all VAs in RO-strip region",100,40.,60.);
-    TH1D *hMPV1 = new TH1D("hMPV1","MPV of all VAs in floating-strip region",100,30.,50.);
+    TH1D *hMPV0 = new TH1D("hMPV0","MPV of all VAs in RO-strip region",100,25.,85.);
+    TH1D *hMPV1 = new TH1D("hMPV1","MPV of all VAs in floating-strip region",100,20.,60.);
 
-
-//-----------------------------------------------------------//
     std::ifstream histFile;
-    histFile.open("histolist_new.txt");
+    histFile.open("/beegfs/users/ruina/VAequalisation/resources/histolist_new.txt");
     std::string histName;
 
-    int count = 0;
-    //std::string inFileName = argv[1];
-    //std::string inFileName = "/beegfs/users/ruina/VAequalisation/out/20181019/merged/merged_160919_104734.root";
-    std::string inFileName = "../out/20181001_20181009/merged/merged_231019_112429.root";
+    int countVA = 0;
+    std::string inFileName = argv[1];
+    //std::string inFileName = "/beegfs/users/ruina/VAequalisation/out/20181001_20181009/merged/merged_231019_112429.root";
     TFile *inFile = new TFile(inFileName.c_str());
     // - TList *list = inFile->GetListOfKeys();
     //TFile *outFile = new TFile("../out/root_forum.root", "recreate");
     //TFile *outFile = new TFile("../out/20181019/langaufit.root", "RECREATE"); 
     //TFile *outFile = new TFile("../out/201810_wk1/langaufit.root", "RECREATE"); 
-    TFile *outFile = new TFile("langaufit.root", "RECREATE"); 
+    //TFile *outFile = new TFile("../out/20181001_20181009/langaufit_231019_112429.root", "RECREATE"); 
+    //TFile *outFile = new TFile("../out/20181001_20181009/langaufit_231019_112429_test.root", "RECREATE"); 
+    TFile *outFile = new TFile("../out/20181001_20181009/langaufit_231019_112429_FMVAs.root", "RECREATE"); 
     // - TKey *key;
     // - TIter iter(list); //or TIter iter(list->MakeIterator());
     // - static TString classname("TH1D");
@@ -295,20 +228,23 @@ int main() {
     // -             const char* histName_c = hist->GetName();
     // -             std::string histName(histName_c);
 
-    //while(std::getline(histFile,histName) && count < 5){ // for debug run
+    TCanvas *c1[1152];
+    std::vector<string> EQMladders = {"12","13","14","15","36","37","38","39","66","67","68"};
+
+    //while(std::getline(histFile,histName) && countVA < 200){ // for debug run
     while(std::getline(histFile,histName)){ // for analysis run
         
         //if(count%2 == 1) continue;
 
-        //if(histName == "hEtaX" || histName == "hEtaY" || hist0->GetEntries() == 0 || hist1->GetEntries() == 0) continue;
-        //if(!(histName == "hVAEnergyY_141_5" || histName == "hVAEnergyY_106_2")) continue;
-        if(!(histName == "hVAEnergyX_154_2" || histName == "hVAEnergyY_33_5")) continue;
-        //if(!(histName == "hVAEnergyX_154_2")) continue;
         string histName0 = histName + "_0";
         string histName1 = histName + "_1";
-        //TH1D *hist = (TH1D*)inFile->Get(histName.c_str()); 
         TH1D *hist0 = (TH1D*)inFile->Get(histName0.c_str()); 
         TH1D *hist1 = (TH1D*)inFile->Get(histName1.c_str()); 
+        if(histName == "hEtaX" || histName == "hEtaY" || hist0->GetEntries() == 0 || hist1->GetEntries() == 0) continue;
+        //if(!(histName == "hVAEnergyY_141_5" || histName == "hVAEnergyY_106_2")) continue;
+        //if(!(histName == "hVAEnergyX_154_2" || histName == "hVAEnergyY_33_5")) continue;
+        //if(!(histName == "hVAEnergyX_154_2")) continue;
+        c1[countVA] = new TCanvas(histName.c_str(),histName.c_str(),800,600);
 
         /*------ Fitting start ------*/
    
@@ -319,13 +255,7 @@ int main() {
         std::cout << "hist0 integral " << hist0->Integral() << std::endl;
 
         // Setting fit range and start values
-
         double fr0[2], sv0[4], pllo0[4], plhi0[4];
-        //fr0[0] = 40.;      fr0[1] = 150.;
-        //sv0[0] = 2.;       sv0[1] = 50.;       sv0[2] = 2e5;      sv0[3] = 3.;    
-        //pllo0[0] = 0.;     pllo0[1] = 10.;     pllo0[2] = 1e4;    pllo0[3] = 0.;  
-        //plhi0[0] = 10.;    plhi0[1] = 1e5;     plhi0[2] = 1e6;    plhi0[3] = 1e5; 
- 
         fr0[0] = 40.;      fr0[1] = 150.;
         pllo0[0]=0.5; pllo0[1]=10.0; pllo0[2]=1.0;         pllo0[3]=0.4;
         plhi0[0]=9.0; plhi0[1]=70.0; plhi0[2]=1000000.0;   plhi0[3]=9.0;
@@ -364,10 +294,7 @@ int main() {
         double SNRPeak1, SNRFWHM1;
         langaupro(fp1,SNRPeak1,SNRFWHM1);
      
-        //hMPV0->Fill(fp0[1]); // MPVs for eta region 0
-        //hMPV1->Fill(fp1[1]); // MPVs for eta region 1 
-
-        TCanvas *c1 = new TCanvas("c1",histName.c_str(),800,600);
+        //TCanvas *c1 = new TCanvas("c1",histName.c_str(),800,600);
 
         // Global style settings
         gStyle->SetOptStat(1111);
@@ -400,29 +327,40 @@ int main() {
         sb1->SetY2NDC(.6);
         sb1->SetTextColor(kBlue);
         
-        c1->Print();
+        //c1[countVA]->Print();
+        //c1->Print();
         //c1->Write();
 
         /**----- Fitting end ------*/
 
 
         //outFile->WriteTObject(hist);
-        outFile->WriteTObject(c1);
+        outFile->WriteTObject(c1[countVA]);
+        //outFile->WriteTObject(c1);
         //outFile->WriteTObject(hMPV0);
         //outFile->WriteTObject(hMPV1);
         //delete hist;
-        delete c1;
-        count++;
+        //delete c1;
+        countVA++;
         std::cout << "---------------------------------------------" << std::endl; 
 
-     }
+        std::vector<string>::iterator it;
+        it = std::find (EQMladders.begin(), EQMladders.end(), histName.substr(11,2));    
+        if(it != EQMladders.end() && histName.substr(13,1) == "_") //EQM ladder found
+            continue;
+        else {
+            hMPV0->Fill(fp0[1]); // MPVs for eta region 0
+            hMPV1->Fill(fp1[1]); // MPVs for eta region 1 
+        }    
+
+    } // end of loop over all histnames
+     
  
- 
-     //outFile->WriteTObject(hMPV0);
-     //outFile->WriteTObject(hMPV1);
-     outFile->cd();
-     outFile->Write();
-     outFile->Close();
+    outFile->WriteTObject(hMPV0);
+    outFile->WriteTObject(hMPV1);
+    outFile->cd();
+    outFile->Write();
+    outFile->Close();
 
     return 0;
 } // end of main
