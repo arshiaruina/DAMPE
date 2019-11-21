@@ -195,7 +195,8 @@ std::pair <double, double> MPVGausFit(std::string f) {
     TFile *inFile = new TFile(f.c_str());
     //TFile *outFile = new TFile("../out/20181001_20181009/MPV_langaufit_231019_112429.root", "RECREATE"); 
     //TFile *outFile = new TFile("../out/20181001_20181009/gausfitMPV_20181001_20181009_FMVAs.root", "RECREATE"); 
-    TFile *outFile = new TFile("test_gausfitMPV_20181001_20181009_FMVAs.root", "RECREATE"); 
+    //TFile *outFile = new TFile("test_gausfitMPV_20181001_20181009_FMVAs.root", "RECREATE"); 
+    TFile *outFile = new TFile("gausfitMPV_20181001_20181009_FMVAs.root", "RECREATE"); 
 
     string histName0 = "hMPV0";
     string histName1 = "hMPV1";
@@ -265,8 +266,8 @@ int main(){
 
     TH1D *hMPV0 = new TH1D("hMPV0","MPV of all VAs in RO-strip region",100,25.,85.);
     TH1D *hMPV1 = new TH1D("hMPV1","MPV of all VAs in floating-strip region",100,20.,60.);
-    TH1D *hCorrFac0 = new TH1D("hCorrFac0","Correction factors in floating-strip region",100,0.,2.);
-    TH1D *hCorrFac1 = new TH1D("hCorrFac1","Correction factors in RO-strip region",100,0,2.);
+    TH1D *hCorrFac0 = new TH1D("hCorrFac0","Correction factors in RO-strip region",100,0.,2.);
+    TH1D *hCorrFac1 = new TH1D("hCorrFac1","Correction factors in floating-strip region",100,0,2.);
     TH1D *hCorrFacDiff = new TH1D("hCorrFacDiff","#Delta(Correction Factors)",100,-1.,1.);
 
     std::ifstream histFile;
@@ -284,19 +285,18 @@ int main(){
     //TFile *outFile = new TFile("../out/20181001_20181009/langaufit_231019_112429.root", "RECREATE"); 
     //TFile *outFile = new TFile("../out/20181001_20181009/langaufit_231019_112429_test.root", "RECREATE"); 
     
-    std::string outFileName = "test_langaufit_231019_112429_FMVAs.root";
+    //std::string outFileName = "test_langaufit_231019_112429_FMVAs.root";
+    std::string outFileName = "langaufit_231019_112429_FMVAs.root";
     //std::string outFileName = "../out/20181001_20181009/langaufit_231019_112429_FMVAs.root";
     TFile *outFile = new TFile(outFileName.c_str(), "RECREATE"); 
 
-    std::cout << " rambo 1 " << std::endl;
     TCanvas *c1[1152];
-    std::cout << " rambo 2 " << std::endl;
-
+    int nVA = 1152;
     double MPV0[1152] = {0.};
     double MPV1[1152] = {0.};
+    double corrFac0[1152] = {0.};
+    double corrFac1[1152] = {0.};
     std::vector<string> EQMladders = {"12","13","14","15","36","37","38","39","66","67","68"};
-
-    int nVA = 5;
 
     while(std::getline(histFile,histName) && countVA < nVA){ // for debug run
     //while(std::getline(histFile,histName)){ // for analysis run
@@ -310,10 +310,11 @@ int main(){
         //if(!(histName == "hVAEnergyY_141_5" || histName == "hVAEnergyY_106_2")) continue;
         //if(!(histName == "hVAEnergyX_154_2" || histName == "hVAEnergyY_33_5")) continue;
         //if(!(histName == "hVAEnergyX_154_2")) continue;
+        //if(!(histName == "hVAEnergyX_154_2")) continue;
         c1[countVA] = new TCanvas(histName.c_str(),histName.c_str(),800,600);
-        if(countVA==0)c1[countVA]->Print("plots.pdf[","pdf");
-        std::cout << " rambo 3 " << std::endl;
-        //TCanvas c2("c2");
+        if(countVA==0){ // open pdf
+            c1[countVA]->Print("plots.pdf[","pdf");
+        }
 
         /**************************************************************
         
@@ -332,9 +333,9 @@ int main(){
         // Setting fit range and start values
         double fr0[2], sv0[4], pllo0[4], plhi0[4];
         fr0[0] = 40.;      fr0[1] = 150.;
-        pllo0[0]=0.5; pllo0[1]=10.0; pllo0[2]=1.0;         pllo0[3]=0.4;
-        plhi0[0]=9.0; plhi0[1]=70.0; plhi0[2]=1000000.0;   plhi0[3]=9.0;
         sv0[0]=1.8;   sv0[1]=50.0;   sv0[2]=50000.0;       sv0[3]=3.0;
+        pllo0[0]=0.5; pllo0[1]=10.0; pllo0[2]=1.0;         pllo0[3]=0.;
+        plhi0[0]=9.0; plhi0[1]=70.0; plhi0[2]=1000000.0;   plhi0[3]=15.;
               
         // Return values
         double fp0[4], fpe0[4];
@@ -355,9 +356,9 @@ int main(){
         // Setting fit range and start values
         double fr1[2], sv1[4], pllo1[4], plhi1[4];
         fr1[0] = 20.;   fr1[1] = 150.;
-        sv1[0] = 2.;    sv1[1] = 40.;        sv1[2] = 1e5;       sv1[3] = 1.;
+        sv1[0] = 2.;    sv1[1] = 35.;        sv1[2] = 1e5;       sv1[3] = 1.;
         pllo1[0] = 0.;  pllo1[1] = 10.;      pllo1[2] = 1.0;     pllo1[3] = 0.;
-        plhi1[0] = 10.; plhi1[1] = 1e5;      plhi1[2] = 1e6;     plhi1[3] = 1e5;
+        plhi1[0] = 10.; plhi1[1] = 1e5;      plhi1[2] = 1e6;     plhi1[3] = 10.;
                
         // Return values
         double fp1[4], fpe1[4];
@@ -381,10 +382,12 @@ int main(){
  
         hist0->SetMaximum((hist0->GetMaximum())*1.1);
         hist0->Draw("hist");
+        hist0->SetLineColor(kRed);
         fitVAEnergy0->SetLineColor(kRed);
         fitVAEnergy0->Draw("hist same"); 
         
         hist1->Draw("hist sames");
+        hist1->SetLineColor(kBlue);
         fitVAEnergy1->SetLineColor(kBlue);
         fitVAEnergy1->Draw("hist sames");
         
@@ -405,7 +408,6 @@ int main(){
         /************************************************
         
                    Saving the histograms and fits
-        
         ************************************************/
         
         c1[countVA]->Print("plots.pdf","pdf");
@@ -422,17 +424,6 @@ int main(){
         //outFile->WriteTObject(hMPV1);
         //delete hist;
         //delete c1;
-
-        //    c2.Print("c2.pdf(","pdf"); 
-        //}
-        //else {
-        //    if(countVA == nVA){
-        //        c2.Print("c2.pdf)","pdf");
-        //    }
-        //    else {
-        //        c2.Print("c2.pdf","pdf");
-        //    }
-        //}
 
         /***********************************************************************
         
@@ -453,19 +444,20 @@ int main(){
         
         std::vector<string>::iterator it;
         it = std::find (EQMladders.begin(), EQMladders.end(), histName.substr(11,2));    
-        if(it != EQMladders.end() && histName.substr(13,1) == "_") //EQM ladder found
-            continue;
-        else {
+        //if(it != EQMladders.end() && histName.substr(13,1) == "_") //EQM ladder found
+        if(it == EQMladders.end() || histName.substr(13,1) != "_") { //FM ladder found
+        //    continue;
+        //else {
             hMPV0->Fill(fp0[1]); // MPVs for eta region 0
             hMPV1->Fill(fp1[1]); // MPVs for eta region 1 
         }    
 
         std::cout << "-------  Finished working on VA " << countVA << "  ---------" << std::endl; 
 
-        std::cout << " rambo 4 " << std::endl;
-        if(countVA==(nVA-1))c1[countVA]->Print("plots.pdf]","pdf");
-        std::cout << " rambo 5 " << std::endl;
-    
+        if(countVA==(nVA-1)){ //close pdf
+            c1[countVA]->Print("plots.pdf]","pdf");
+        }
+
         countVA++;
 
     } // end of loop over all histnames
@@ -500,15 +492,15 @@ int main(){
 
     ******************************************************/
 
-    TFile *outFileCorrFac = new TFile("test_CorrectionFactors.root", "RECREATE");
+    TFile *outFileCorrFac = new TFile("corrFac.root", "RECREATE");
 
     //for(int iva = 0; iva < 1152; iva++){
-    for(int iva = 0; iva < countVA; iva++){
-        double corrFac0 = eqParams.first/MPV0[iva];
-        double corrFac1 = eqParams.second/MPV1[iva];
-        hCorrFac0->Fill(corrFac0);
-        hCorrFac1->Fill(corrFac1);
-        hCorrFacDiff->Fill(corrFac0-corrFac1);
+    for(int iva = 0; iva < nVA; iva++){
+        corrFac0[iva] = eqParams.first/MPV0[iva];
+        corrFac1[iva] = eqParams.second/MPV1[iva];
+        hCorrFac0->Fill(corrFac0[iva]);
+        hCorrFac1->Fill(corrFac1[iva]);
+        hCorrFacDiff->Fill(corrFac0[iva]-corrFac1[iva]);
     }
 
     outFileCorrFac->WriteTObject(hCorrFac0);
@@ -517,6 +509,10 @@ int main(){
     outFileCorrFac->cd();
     outFileCorrFac->Write();
     outFileCorrFac->Close();
+
+    //TODO
+    //check the difference between the correction factors
+    //apply the correction factors
 
     return 0;
 } // end of main
