@@ -260,6 +260,18 @@ std::pair <double, double> MPVGausFit(std::string f) {
 
 } 
 
+struct Hist {
+    
+    TH1D *hist0;
+    TH1D *hist1;
+    std::string name;
+    int ladder;
+    int va;
+    TH1D *hist0_corr;
+
+};
+
+std::vector<Hist> vecHis;
 
 //int main(int argc, char** argv) {
 int main(){
@@ -293,8 +305,8 @@ int main(){
     int countVA = 0;
     int iva; // 0-5
     int iladder; // 0-191
-    int nVA = 7; //1152
-    int nLADDER = 50; //192
+    int nVA = 6;
+    int nLADDER = 192;
     //TCanvas *c1[50][2];
     //double MPV0[50][2];
     //double MPV1[50][2];
@@ -304,14 +316,14 @@ int main(){
     double MPV0[nLADDER][nVA];
     double MPV1[nLADDER][nVA];
     double corrFac0[nLADDER][nVA];
-    double corrFac1[nLADDER][nVA];
+    double corrFac1[nLADDER][nVA]; // TODO declare outside main
     std::vector<string> EQMladders = {"12","13","14","15","36","37","38","39","66","67","68"};
 
     std::cout << outFileName << std::endl;
-    while(std::getline(histFile,histName) && countVA < nVA){ // for debug run
-    //while(std::getline(histFile,histName)){ // for analysis run
-        
-    std::cout << outFileName << std::endl;
+    while(std::getline(histFile,histName) && countVA < 2){ // for debug run
+        //while(std::getline(histFile,histName)){ // for analysis run
+
+        std::cout << outFileName << std::endl;
 
         std::size_t delim1 = histName.find("_");
         std::size_t delim2 = histName.find("_",delim1+1);
@@ -319,7 +331,7 @@ int main(){
         iva = std::stoi(histName.substr(delim2+1));
         std::cout << "iladder ... " << iladder << std::endl;
         std::cout << "iva ... " << iva << std::endl;
- 
+
         //iva = countVA;
         //iladder = 48;
 
@@ -333,6 +345,14 @@ int main(){
         //if(!(histName == "hVAEnergyX_154_2" || histName == "hVAEnergyY_33_5")) continue;
         //if(!(histName == "hVAEnergyX_154_2")) continue;
         //if(!(histName == "hVAEnergyX_154_2")) continue;
+
+        vecHis.push_back(Hist());
+        vecHis.back().hist0  = hist0;
+        vecHis.back().hist1  = hist1;
+        vecHis.back().name   = histName;
+        vecHis.back().ladder = iladder;
+        vecHis.back().va     = iva;
+
         c1[iladder][iva] = new TCanvas(histName.c_str(),histName.c_str(),800,600);
         if(countVA==0){ // open pdf
             c1[iladder][iva]->Print("plots.pdf[","pdf");
@@ -432,19 +452,7 @@ int main(){
         ************************************************/
         
         c1[iladder][iva]->Print("plots.pdf","pdf");
-
-        //c1[countVA]->Write();
-        //c1[countVA]->Print(); //generates .ps files in current directory, but empty?
-        //c1->Print();
-        //c1->Write();
-
-        //outFile->WriteTObject(hist);
         outFile->WriteTObject(c1[iladder][iva]);
-        //outFile->WriteTObject(c1);
-        //outFile->WriteTObject(hMPV0);
-        //outFile->WriteTObject(hMPV1);
-        //delete hist;
-        //delete c1;
 
         /***********************************************************************
         
@@ -453,10 +461,9 @@ int main(){
         
         ***********************************************************************/
         
-        //MPV0[countVA] = fp0[1];
-        //MPV1[countVA] = fp1[1];
         MPV0[iladder][iva] = fp0[1];
         MPV1[iladder][iva] = fp1[1];
+        std::cout << "MPV0 " << iladder << " " << iva << " " << MPV0[iladder][iva] << std::endl; 
 
         /***********************************************************************
     
@@ -484,17 +491,18 @@ int main(){
         countVA++;
         std::cout << outFileName << std::endl;
 
+
+    std::cout << "INSIDE LOOP why does my ncode always have to behave strangely? " << MPV0[48][0] << std::endl; 
+
         } // end of loop over all histnames
 
-        std::cout << "debug 1" << std::endl; 
 
-        std::cout << outFileName << std::endl;
+    if (outFile->IsZombie())
+        std::cout << "Output file is a zombie!" << std::endl;
+    else
+    std::cout << "Output file " << outFileName << " is not a zombie!" << std::endl; 
 
-        if (outFile->IsZombie())
-            std::cout << "Output file is a zombie!" << std::endl;
-        else
-        std::cout << "Output file " << outFileName << " is not a zombie!" << std::endl; 
-
+    std::cout << "OUTSIDE LOOP why does my ncode always have to behave strangely? " << MPV0[48][0] << std::endl; 
     /******************************************************
     
         Saving the hMPV0 and hMPV1 histograms and fits 
@@ -525,25 +533,56 @@ int main(){
 
     ******************************************************/
 
+    std::cout << "why does my ncode always have to behave strangely? " << MPV0[48][0] << std::endl; 
+    std::cout << "why does my ncode always have to behave strangely? " << MPV0[48][1] << std::endl; 
+
     TFile *outFileCorrFac = new TFile("corrFac.root", "RECREATE");
 
-
-    //TODO
-    //for(int iiladder = 0; iiladder < 2; iiladder++){
+    //TODO //for(int iiladder = 0; iiladder < 2; iiladder++){
     int iiladder = 48;
         for(int iiva = 0; iiva < 2; iiva++){
             corrFac0[iiladder][iiva] = eqParams.first/MPV0[iiladder][iiva];
+            std::cout << corrFac0[iiladder][iiva] << std::endl;
+            std::cout << iiladder << " " << iiva << " " << MPV0[iiladder][iiva] << std::endl;
             corrFac1[iiladder][iiva] = eqParams.second/MPV1[iiladder][iiva];
             hCorrFac0->Fill(corrFac0[iiladder][iiva]);
             hCorrFac1->Fill(corrFac1[iiladder][iiva]);
             hCorrFacDiff->Fill(corrFac0[iiladder][iiva]-corrFac1[iiladder][iiva]);
-           // corrFac0[iiva] = eqParams.first/MPV0[iiva];
-           // corrFac1[iiva] = eqParams.second/MPV1[iiva];
-           // hCorrFac0->Fill(corrFac0[iiva]);
-           // hCorrFac1->Fill(corrFac1[iiva]);
-           // hCorrFacDiff->Fill(corrFac0[iiva]-corrFac1[iiva]);
         }
     //}
+
+    //outFileCorrFac->WriteTObject(hCorrFac0);
+    //outFileCorrFac->WriteTObject(hCorrFac1);
+    //outFileCorrFac->WriteTObject(hCorrFacDiff);
+    //outFileCorrFac->cd();
+    //outFileCorrFac->Write();
+    //outFileCorrFac->Close();
+
+    //TODO
+    //check the difference between the correction factors
+    //apply the correction factors
+
+    
+    if(!vecHis.empty()){
+        //for(int ivec = 0; ivec < vecHis.size(); ivec++){
+        for(int ivec = 0; ivec < 2; ivec++){
+            int nbins = vecHis.at(ivec).hist0->GetXaxis()->GetNbins();
+            std::cout << nbins << std::endl;
+            double xmax = vecHis.at(ivec).hist0->GetXaxis()->GetLast() + 5.0;
+            std::cout << xmax << std::endl;
+            std::cout << corrFac0[vecHis.at(ivec).ladder][vecHis.at(ivec).va] << std::endl;
+            //TH1D *hnew = new TH1F("hnew","title",nbins,xminnew,xmaxnew);
+            vecHis.at(ivec).hist0_corr = new TH1D("hist0_corr","hist VA corrected",nbins,0.,xmax);
+            for (int ibin = 1; ibin <= nbins; ibin++) {
+                double y = vecHis.at(ivec).hist0->GetBinContent(ibin);
+                double x = vecHis.at(ivec).hist0->GetXaxis()->GetBinCenter(ibin);
+                double xnew = corrFac0[vecHis.at(ivec).ladder][vecHis.at(ivec).va] * x; //correction 
+                vecHis.at(ivec).hist0_corr->Fill(xnew,y);
+            }
+        outFileCorrFac->WriteTObject(vecHis.at(ivec).hist0_corr);
+        outFileCorrFac->WriteTObject(vecHis.at(ivec).hist0);
+        }
+    }
 
     outFileCorrFac->WriteTObject(hCorrFac0);
     outFileCorrFac->WriteTObject(hCorrFac1);
@@ -552,9 +591,24 @@ int main(){
     outFileCorrFac->Write();
     outFileCorrFac->Close();
 
-    //TODO
-    //check the difference between the correction factors
-    //apply the correction factors
-
     return 0;
 } // end of main
+
+//void ApplyCorrFac(){
+//
+//    if(!vecHis.empty()){
+//        for(int ivec = 0; ivec < vecHis.size(); ivec++){
+//            int nbins = vecHis.at(ivec).hist0->GetXaxis()->GetNbins();
+//            double xmax = vecHis.at(ivec).hist0->GetXaxis()->GetLast() + 5.0;
+//            //TH1D *hnew = new TH1F("hnew","title",nbins,xminnew,xmaxnew);
+//            vecHis.at(ivec).hist0_corr = new TH1D("hist0_corr","hist VA corrected",nbins,0.,xmax);
+//            for (int ibin = 1; ibin <= nbins; ibin++) {
+//                double y = vecHis.at(ivec).hist0->getBinContent(ibin);
+//                double x = vecHis.at(ivec).hist0->GetXaxis()->GetBinCenter(ibin);
+//                double xnew = corrFac0[vecHis.at(ivec).ladder][vecHis.at(ivec).va] * x //correction 
+//                vecHis.at(ivec).hist0_corr->Fill(xnew,y);
+//            }
+//        }
+//    }
+//
+//} 

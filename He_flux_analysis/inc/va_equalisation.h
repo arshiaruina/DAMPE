@@ -1,5 +1,10 @@
-#ifndef VAEQUALISATION_H
-#define VAEQUALISATION_H 1
+//
+// Created by Arshia Ruina on 13.01.20.
+//
+
+#ifndef VA_EQUALISATION_VA_EQUALISATION_H
+#define VA_EQUALISATION_VA_EQUALISATION_H
+
 // C++
 #include <iostream>
 #include <iomanip>
@@ -42,7 +47,7 @@
 
 #define N_LADDER    192
 #define N_VA        6
-#define N_ETAREG    2        
+#define N_ETAREG    2
 
 //class VAequalisation {
 
@@ -50,37 +55,17 @@
 
 //        VAequalisation();
 //        ~VAequalisation();
-        int GetEtaRegion(double);
-        int GetVANumber(int,int);
-        bool IsLadderX1(int);
-        bool IsLadderX2(int);
-        bool IsLadderY1(int);
-        bool IsLadderY2(int);
-        double CalcEta(DmpStkSiCluster*);
-   
+////declared these in clusterEnergyGen.h
+//int GetEtaRegion(double);
+//int GetVANumber(int,int);
+//bool IsLadderX1(int);
+//bool IsLadderX2(int);
+//bool IsLadderY1(int);
+//bool IsLadderY2(int);
+//double CalcEta(DmpStkSiCluster*);
+
 //    private:
 
-        TH1D* hVAEnergyX[N_LADDER/2][N_VA][N_ETAREG];
-        TH1D* hVAEnergyY[N_LADDER/2][N_VA][N_ETAREG];
-        int checkCounter[N_LADDER][N_VA] = {0};
-        int total[N_LADDER][N_VA] = {0};
-        //storage for names of the histograms
-        std::vector<std::string> histoNamesX, histoNamesY;
-        //std::stringstream ssX, ssY;
-        TH1D* hEtaX;
-        TH1D* hEtaY;
-        int xLadder             = -99;
-        int yLadder             = -99;
-        double cosTheta         = -99.;
-        double clusterEta       = -99.;
-        double clusterEnergy    = -99.;
-        //double inclPerp;         
-        //int inclPerpIndex;            
-        int ladderNumber        = -99;
-        int clusterFirstStrip   = -99;
-        int clusterLastStrip    = -99;
-        int clusterVA           = -99;
-        int clusterEtaReg       = -99;
 //};
 
-#endif
+#endif //VA_EQUALISATION_VA_EQUALISATION_H
