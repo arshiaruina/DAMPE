@@ -2,36 +2,9 @@
 
 // example file
 // /beegfs/users/ruina/VAequalisation/out/20181019/merged/merged_160919_104734.root
-
-#include "TH1.h"
-#include "TF1.h"
-#include "TROOT.h"
-#include "TStyle.h"
-#include "TMath.h"
-
-//C++
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <sstream>
-#include <cmath>
-#include <vector>
-// ROOT
-#include "TROOT.h"
-#include "TFile.h"
-#include "TMath.h"
-#include "TF1.h"
-#include "TH1D.h"
-#include "TCanvas.h"
-#include "TSystem.h"
-#include "TRandom.h"
-#include "TStyle.h"
-
+#include "../inc/correctionfactor.h"
 //#include "../inc/va_equalisation.h"
 //#include "mylangaus.C"
-#include "TPaveStats.h"
 using namespace std;
 
 Double_t langaufun(Double_t *x, Double_t *par) {
@@ -491,9 +464,6 @@ int main(){
         countVA++;
         std::cout << outFileName << std::endl;
 
-
-    std::cout << "INSIDE LOOP why does my ncode always have to behave strangely? " << MPV0[48][0] << std::endl; 
-
         } // end of loop over all histnames
 
 
@@ -502,7 +472,6 @@ int main(){
     else
     std::cout << "Output file " << outFileName << " is not a zombie!" << std::endl; 
 
-    std::cout << "OUTSIDE LOOP why does my ncode always have to behave strangely? " << MPV0[48][0] << std::endl; 
     /******************************************************
     
         Saving the hMPV0 and hMPV1 histograms and fits 
@@ -533,23 +502,29 @@ int main(){
 
     ******************************************************/
 
-    std::cout << "why does my ncode always have to behave strangely? " << MPV0[48][0] << std::endl; 
-    std::cout << "why does my ncode always have to behave strangely? " << MPV0[48][1] << std::endl; 
-
     TFile *outFileCorrFac = new TFile("corrFac.root", "RECREATE");
 
     //TODO //for(int iiladder = 0; iiladder < 2; iiladder++){
     int iiladder = 48;
         for(int iiva = 0; iiva < 2; iiva++){
             corrFac0[iiladder][iiva] = eqParams.first/MPV0[iiladder][iiva];
-            std::cout << corrFac0[iiladder][iiva] << std::endl;
-            std::cout << iiladder << " " << iiva << " " << MPV0[iiladder][iiva] << std::endl;
+            std::cout << "[DEBUG] " << corrFac0[iiladder][iiva] << std::endl;
+            std::cout << "[DEBUG] " << iiladder << " " << iiva << " " << MPV0[iiladder][iiva] << std::endl;
             corrFac1[iiladder][iiva] = eqParams.second/MPV1[iiladder][iiva];
+            hCorrFac->SetBinContent(iiladder+1,iiva+1,corrFac0[iiladder][iiva]);
             hCorrFac0->Fill(corrFac0[iiladder][iiva]);
             hCorrFac1->Fill(corrFac1[iiladder][iiva]);
             hCorrFacDiff->Fill(corrFac0[iiladder][iiva]-corrFac1[iiladder][iiva]);
         }
     //}
+
+    gStyle->SetPalette(kBird);
+    //hCorrFac->Draw("COLZ");
+    hCorrFac->SetOption("COLZ");
+    hCorrFac->SetContour(30);
+    hCorrFac->SetStats(0);
+    hCorrFac->SetMinimum(0.95);
+    hCorrFac->SetMaximum(1.05);
 
     //outFileCorrFac->WriteTObject(hCorrFac0);
     //outFileCorrFac->WriteTObject(hCorrFac1);
@@ -562,31 +537,36 @@ int main(){
     //check the difference between the correction factors
     //apply the correction factors
 
-    
-    if(!vecHis.empty()){
-        //for(int ivec = 0; ivec < vecHis.size(); ivec++){
-        for(int ivec = 0; ivec < 2; ivec++){
-            int nbins = vecHis.at(ivec).hist0->GetXaxis()->GetNbins();
-            std::cout << nbins << std::endl;
-            double xmax = vecHis.at(ivec).hist0->GetXaxis()->GetLast() + 5.0;
-            std::cout << xmax << std::endl;
-            std::cout << corrFac0[vecHis.at(ivec).ladder][vecHis.at(ivec).va] << std::endl;
-            //TH1D *hnew = new TH1F("hnew","title",nbins,xminnew,xmaxnew);
-            vecHis.at(ivec).hist0_corr = new TH1D("hist0_corr","hist VA corrected",nbins,0.,xmax);
-            for (int ibin = 1; ibin <= nbins; ibin++) {
-                double y = vecHis.at(ivec).hist0->GetBinContent(ibin);
-                double x = vecHis.at(ivec).hist0->GetXaxis()->GetBinCenter(ibin);
-                double xnew = corrFac0[vecHis.at(ivec).ladder][vecHis.at(ivec).va] * x; //correction 
-                vecHis.at(ivec).hist0_corr->Fill(xnew,y);
-            }
-        outFileCorrFac->WriteTObject(vecHis.at(ivec).hist0_corr);
-        outFileCorrFac->WriteTObject(vecHis.at(ivec).hist0);
-        }
-    }
+   
+    //------------------------------------------------------------// 
+    //      incorrect way to calibrate (scale along the x axis)
+    //------------------------------------------------------------// 
+    //if(!vecHis.empty()){
+    //    //for(int ivec = 0; ivec < vecHis.size(); ivec++){
+    //    for(int ivec = 0; ivec < 2; ivec++){
+    //        int nbins = vecHis.at(ivec).hist0->GetXaxis()->GetNbins();
+    //        std::cout << nbins << std::endl;
+    //        double xmax = vecHis.at(ivec).hist0->GetXaxis()->GetLast() + 5.0;
+    //        std::cout << xmax << std::endl;
+    //        std::cout << corrFac0[vecHis.at(ivec).ladder][vecHis.at(ivec).va] << std::endl;
+    //        //TH1D *hnew = new TH1F("hnew","title",nbins,xminnew,xmaxnew);
+    //        vecHis.at(ivec).hist0_corr = new TH1D("hist0_corr","hist VA corrected",nbins,0.,xmax);
+    //        for (int ibin = 1; ibin <= nbins; ibin++) {
+    //            double y = vecHis.at(ivec).hist0->GetBinContent(ibin);
+    //            double x = vecHis.at(ivec).hist0->GetXaxis()->GetBinCenter(ibin);
+    //            double xnew = corrFac0[vecHis.at(ivec).ladder][vecHis.at(ivec).va] * x; //correction 
+    //            vecHis.at(ivec).hist0_corr->Fill(xnew,y);
+    //        }
+    //    outFileCorrFac->WriteTObject(vecHis.at(ivec).hist0_corr);
+    //    outFileCorrFac->WriteTObject(vecHis.at(ivec).hist0);
+    //    }
+    //}
+    //------------------------------------------------------------// 
 
     outFileCorrFac->WriteTObject(hCorrFac0);
     outFileCorrFac->WriteTObject(hCorrFac1);
     outFileCorrFac->WriteTObject(hCorrFacDiff);
+    outFileCorrFac->WriteTObject(hCorrFac);
     outFileCorrFac->cd();
     outFileCorrFac->Write();
     outFileCorrFac->Close();
