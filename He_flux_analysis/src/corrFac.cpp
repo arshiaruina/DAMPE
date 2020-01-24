@@ -1,11 +1,10 @@
-#include "../inc/correctionFactors.h"
-#include "../inc/landauGaussConv.h"
+#include "../inc/corrFac.h"
+#include "../inc/langauConv.h"
 
 //using namespace std; //TODO: remove!
 
-landauGaussConv langauObj;
 
-std::pair <double, double> correctionFactors::MPVGausFit(std::string inFileNameMPVGausFit) {
+std::pair <double, double> corrFac::MPVGausFit(std::string inFileNameMPVGausFit) {
 
     //std::string inFileNameMPVGausFit = "../out/20181001_20181009/langaufit_231019_112429.root";
     //std::string inFileNameMPVGausFit = "../out/20181001_20181009/langaufit_231019_112429_FMVAs.root";
@@ -79,8 +78,10 @@ std::pair <double, double> correctionFactors::MPVGausFit(std::string inFileNameM
 
 } 
 
-std::string correctionFactors::VAEnergyLangauFit(){
+std::string corrFac::VAEnergyLangauFit(){
 
+    langauConv langauObj;
+    
     histFile.open(histFileName.c_str());
     
     TFile *inFileLangauFit = new TFile(inFileNameLangauFit.c_str());
@@ -90,8 +91,8 @@ std::string correctionFactors::VAEnergyLangauFit(){
     ////////    Start loop over all histograms      ////////
 
 
-    while(std::getline(histFile,histName) && countVA < 2){ // for debug run
-        //while(std::getline(histFile,histName)){ // for analysis run
+    //while(std::getline(histFile,histName) && countVA < 12){ // for debug run
+    while(std::getline(histFile,histName)){ // for analysis run
 
         std::cout << outFileNameLangauFit << std::endl;
 
@@ -288,15 +289,16 @@ std::string correctionFactors::VAEnergyLangauFit(){
     
 }
 
-void correctionFactors::Compute(){
+void corrFac::Compute(){
 
     eqParams = MPVGausFit(VAEnergyLangauFit());   
 
     TFile *outFileCorrFac = new TFile(outFileNameCorrFac.c_str(), "RECREATE");
 
-    //TODO //for(int iiladder = 0; iiladder < 2; iiladder++){
-    int iiladder = 48;
-        for(int iiva = 0; iiva < 2; iiva++){
+    for(int iiladder = 0; iiladder < nLADDER; iiladder++){
+    //for(int iiladder = 48; iiladder < 50; iiladder++){
+    //int iiladder = 48;
+        for(int iiva = 0; iiva < nVA; iiva++){
 
             //corrFac for eta region 0, stored in a 2D array
             corrFac0[iiladder][iiva] = eqParams.first/MPV0[iiladder][iiva];
@@ -314,14 +316,14 @@ void correctionFactors::Compute(){
             hCorrFac1->Fill(corrFac1[iiladder][iiva]);
             hCorrFacDiff->Fill(corrFac0[iiladder][iiva]-corrFac1[iiladder][iiva]);
         }
-    //}
+    }
 
     //gStyle->SetPalette(kBird); //can be used only in ROOT 6 and higher versions
     hCorrFac->SetOption("COLZ");
-    hCorrFac->SetContour(30);
+    hCorrFac->SetContour(20);
     hCorrFac->SetStats(0);
-    hCorrFac->SetMinimum(0.95);
-    hCorrFac->SetMaximum(1.05);
+    hCorrFac->SetMinimum(0.9);
+    hCorrFac->SetMaximum(1.0);
 
     outFileCorrFac->WriteTObject(hCorrFac);
     outFileCorrFac->WriteTObject(hCorrFac0);
@@ -336,9 +338,17 @@ void correctionFactors::Compute(){
 
 int main(){
 
-    correctionFactors myCorrFacObj;
+    corrFac myCorrFacObj;
 
-    myCorrFacObj.Compute();
+    bool flagAppCorrFac = true;
+    //TODO make langau fits to histograms where correction factors have been applied
+    //TODO give the filename as an argument
+    if(flagAppCorrFac){
+        myCorrFacObj.VAEnergyLangauFit();
+    }
+    else{
+        myCorrFacObj.Compute();
+    }
     //std::cout << "Gaussian fit to the MPVs..." << std::endl;
     //std::pair<double, double> eqParams = myCorrFacObj.MPVGausFit(myCorrFacObj.VAEnergyLangauFit());
     //std::cout << eqParams.first << std::endl;

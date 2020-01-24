@@ -203,7 +203,7 @@ int main(int argc, char** argv) {
 	TTree *t = (TTree*)f->Get("CollectionTree");
 
     // Bad channels list
-    bool** badchannels =  read_bad_channels_file("/beegfs/users/ruina/VAequalisation/resources/bad_chan.txt");
+    bool** badchannels =  read_bad_channels_file("../resources/bad_chan.txt");
 	
     TClonesArray* stktracks = new TClonesArray("DmpStkTrack"); //name of the class
 	t->SetBranchAddress("StkKalmanTracks",&stktracks); // name of the branch
@@ -229,24 +229,12 @@ int main(int argc, char** argv) {
 
 
 	std::size_t found = inFileName.find_last_of("/");
-    //std::string outFileName = "../out/20181001_20181009/" + inFileName.substr(found+1);
+    std::string outFileName = "../out/20181001_20181009/" + inFileName.substr(found+1);
     //std::string outFileName = "../out/20181001_20181009_1/" + inFileName.substr(found+1);
     //std::string outFileName = "../out/20181019/" + inFileName.substr(found+1);
 	//std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
 	//std::string outFileName = "../test/" + inFileName.substr(found+1);
-
-    bool flagAppCorrFac = true; //for corrFac application
-    std::string outFileName;
-    TFile *inFileCorrFac = new TFile(inFileNameCorrFac.c_str());
-    std::string hCorrFacName = "hCorrFac";
-    TH2D *hCorrFac = (TH2D*)inFileCorrFac->Get(hCorrFacName.c_str());
-    if(flagAppCorrFac) {
-        outFileName = dir + "test/AppCorrFac/" + inFileName.substr(found+1);
-    }
-    else {
-        outFileName = dir + "test/" + inFileName.substr(found+1);
-    }
-    TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
+	TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
 
     hEtaX = new TH1D("hEtaX","Eta distribution for X planes; #eta; No. of events",50,0.,1.);
     hEtaY = new TH1D("hEtaY","Eta distribution for Y planes; #eta; No. of events",50,0.,1.);
@@ -364,6 +352,9 @@ int main(int argc, char** argv) {
                     clusterEnergy = stkcluster->getEnergy()*cosTheta;
                     clusterEta = CalcEta(stkcluster);
 
+                    // 4. exclude single-strip clusters
+                    if(clusterEta == 0) continue;
+
                     if(ixy == 0 /*&& clusterEta != 0 && clusterEta != 1*/) {
                         nClusterX++;
                         sMeanX += clusterEnergy;
@@ -390,6 +381,8 @@ int main(int argc, char** argv) {
         	//if(!(sMeanX > 0.92 && sMeanX < 0.96 && sMeanY > 0.92 && sMeanY < 0.96)) continue;
         	if(sMeanX < .9 || sMeanX > 1.1) continue;
             if(sMeanY < .9 || sMeanY > 1.1) continue;
+            //if(std::abs(sMeanX - 1.0) > 0.1 || std::abs(sMeanY - 1.0) > 0.1) continue;
+
 
         	vTrackIndex.push_back(itrack);
         	hNTracks->Fill(vTrackIndex.size());
@@ -401,7 +394,8 @@ int main(int argc, char** argv) {
 
         //std::cout << "track loop " << std::endl;
 
-    	// loop over selected tracks
+    	// ------ loop over selected tracks ------ //
+
     	for(unsigned int itrack = 0; itrack < vTrackIndex.size(); itrack++){
     	//for(int itrack = 0; itrack < stkhelper->GetSize(); itrack++){
 
@@ -448,9 +442,23 @@ int main(int argc, char** argv) {
                     }
             		if(!stkcluster) continue;
 		
+                    // ----- Excluding EQM ladders ----- // 
+                    ladderNumber = stkcluster->getLadderHardware();
+                    //std::vector<int>::iterator it;
+                    //it = std::find (EQMladders.begin(), EQMladders.end(), ladderNumber);    
+                    //if(it != EQMladders.end()) continue;
+                    
+                    clusterEnergy = stkcluster->getEnergy()*cosTheta;
+                    clusterEta = CalcEta(stkcluster);
+                    clusterEtaReg = GetEtaRegion(clusterEta);
+
                     clusterFirstStrip = stkcluster -> getFirstStrip();
                     clusterLastStrip = stkcluster -> getLastStrip();
+                    clusterVA = GetVANumber(clusterFirstStrip, clusterLastStrip);
   
+                    //Correction factor applied
+                    clusterEnergyCorr = clusterEnergy * corrFac[ladderNumber][clusterVA];
+
                     //if(is_cluster_bad_channel(stkcluster, badchannels)) continue;
  
                     //--------------- Selection Cuts ----------------//
@@ -472,14 +480,6 @@ int main(int argc, char** argv) {
 
                     // 3. |Z|=1            
 
-                    if(flagAppCorrFac){
-                         clusterEnergy = stkcluster->getEnergy() * cosTheta * hCorrFac->GetBinContent(ladderNumber+1,clusterVA+1);
-                     }
-                     else {
-                         clusterEnergy = stkcluster->getEnergy() * cosTheta;
-                     }          
-                    clusterEta = CalcEta(stkcluster);
-
                     //if(ixy == 0 /*&& clusterEta != 0 && clusterEta != 1*/) {
                     //    nClusterX++;
                     //    sMeanX += clusterEnergy();
@@ -492,11 +492,7 @@ int main(int argc, char** argv) {
 
                     //if(ixy == 0 && clusterEnergy > 20.) {hDistanceX -> Fill(std::abs(stktrack->getHitMeasX(ipoint) - stktrack->getHitX(ipoint)));}
                     //if(ixy == 1 && clusterEnergy > 20.) {hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));}
-                
-                    ladderNumber = stkcluster->getLadderHardware();
-                    clusterVA = GetVANumber(clusterFirstStrip, clusterLastStrip);
-                    clusterEtaReg = GetEtaRegion(clusterEta);
-
+               
                     /*------- checks for the low energy peak in the VA charge distribution -------*/
         
                     // (1) caused by clusters on VA edge?
@@ -512,6 +508,8 @@ int main(int argc, char** argv) {
 
                     //std::cout << "cluster ladder: " << ladderNumber << std::endl;
                     //std::cout << "cluster VA: " << clusterVA << std::endl;
+
+                    std::cout << "event " << i << " track " << itrack << " point " << ipoint << " cluster x/y " << ixy << " has ladderHardware " << ladderNumber << std::endl;
 
                     if(clusterVA < 0 || clusterEtaReg < 0) continue;
                     if(IsLadderX1(ladderNumber)) hVAEnergyX[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
@@ -576,4 +574,5 @@ int main(int argc, char** argv) {
 	sw.Stop();
     sw.Print();
 } // end of main
+
 

@@ -10,8 +10,8 @@
 // example file
 // /beegfs/dampe/prod/FM/FlightData/2A/20181019/DAMPE_2A_OBS_20181019_20181019T001308_20181019T002610_00000_jEwJChikPnVApmeJU6og/DAMPE_2A_OBS_20181019_20181019T001308_20181019T002610_00000_jEwJChikPnVApmeJU6og.root
 
-#include "../inc/va_equalisation.h"
-#include "clusterEnergyGen.h"
+//#include "../inc/va_equalisation.h"
+#include "../inc/clusterEnergyGen.h"
 //#include "../inc/track_selection.hpp"
 
 using namespace std;
@@ -120,7 +120,7 @@ bool clusterEnergyGen::IsLadderX2(int ladder){
         return false;
 }
 
-bool clusterEnergyGen::CalcEta(int sLadderY1(int ladder){
+bool clusterEnergyGen::IsLadderY1(int ladder){
     if(ladder >= 0 && ladder < 48)
         return true;
     else
