@@ -235,16 +235,20 @@ int main(int argc, char** argv) {
 	//std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
 	//std::string outFileName = "../test/" + inFileName.substr(found+1);
 
-    bool flagAppCorrFac = true; //for corrFac application
-    std::string outFileName;
-    TFile *inFileCorrFac = new TFile(inFileNameCorrFac.c_str());
-    std::string hCorrFacName = "hCorrFac";
-    TH2D *hCorrFac = (TH2D*)inFileCorrFac->Get(hCorrFacName.c_str());
+    bool flagAppCorrFac = true;   //for corrFac application
+    //bool flagAppCorrFac = false;    //without corrFac application
+
+    //std::string outFileName;
+    //TFile *inFileCorrFac = new TFile(inFileNameCorrFac.c_str());
+    //std::string hCorrFacName = "hCorrFac";
     if(flagAppCorrFac) {
-        outFileName = dir + "test/AppCorrFac/" + inFileName.substr(found+1);
+        inFileCorrFac = new TFile(inFileNameCorrFac.c_str());
+        hCorrFac = (TH2D*)inFileCorrFac->Get(hCorrFacName.c_str());
+        outFileName = dirBcorr + "/unmerged/" + inFileName.substr(found+1);
     }
     else {
-        outFileName = dir + "test/" + inFileName.substr(found+1);
+        //outFileName = dirA + "/unmerged/" + inFileName.substr(found+1);
+        outFileName = dirB + "/unmerged/" + inFileName.substr(found+1);
     }
     TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
 

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-mkdir -p ../resources/201810_wk1_split/
+mkdir -p ../resources/201812_wk1_split/
 
-WEEK_FILE="../resources/201810_wk1.txt"
+WEEK_FILE="../resources/201812_wk1.txt"
 LINES=$(( `wc -l < $WEEK_FILE`/90 ))
-LOCATION="../resources/201810_wk1_split/"
+LOCATION="../resources/201812_wk1_split/"
 
 split -l $LINES $WEEK_FILE $LOCATION
 

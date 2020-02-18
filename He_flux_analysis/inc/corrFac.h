@@ -36,8 +36,13 @@ public:
 
     std::pair <double, double> MPVGausFit(std::string inFileNameMPVGausFit);
     std::string VAEnergyLangauFit();
-    void Compute();
+    void Compute(bool);
     
+    std::string inFileNameLangauFit;   
+    std::string outFileNameLangauFit;  
+    std::string outFileNameMPVGausFit;
+    std::string outFileNameCorrFac;
+
 private:
 
     TH1D *hMPV0 = new TH1D("hMPV0","MPV of all VAs in RO-strip region",100,25.,85.);
@@ -45,7 +50,7 @@ private:
     TH1D *hCorrFac0 = new TH1D("hCorrFac0","Correction factors in RO-strip region",100,0.,2.);
     TH1D *hCorrFac1 = new TH1D("hCorrFac1","Correction factors in floating-strip region",100,0,2.);
     TH1D *hCorrFacDiff = new TH1D("hCorrFacDiff","#Delta(Correction Factors)",100,-1.,1.);
-    TH2D *hCorrFac = new TH2D("hCorrFac", "Correction factors", 192, 0, 191, 6, 0, 5);
+    TH2D *hCorrFac = new TH2D("hCorrFac", "Correction factors", 192, 0, 192, 6, 0, 6);
     
     int countVA = 0;
     int iva; // 0-5
@@ -69,17 +74,64 @@ private:
     std::string histName;
     std::string histFileName = "/beegfs/users/ruina/VAequalisation/resources/histolist_new.txt";
     
-    std::string computeDataPeriodStart = "20181001";
-    std::string computeDataPeriodStop  = "20181009";
-    //std::string mergeTag = "231019_112429";
-    std::string mergeTag = "230120_134848";
-    std::string dir = "/beegfs/users/ruina/VAequalisation/out/" + computeDataPeriodStart + "_" + computeDataPeriodStop + "/";
-    //std::string inFileNameLangauFit  = dir + "merged/merged_" + mergeTag + ".root";
-    //std::string outFileNameLangauFit = dir + "test/langaufit_" + mergeTag + ".root";
-    std::string outFileNameCorrFac   = dir + "test/corrFac_" + mergeTag + ".root";
+
+
+    // some things need to be changed.... 11.02.2020
     
-    std::string inFileNameLangauFit  = dir + "test/AppCorrFac/merged/merged_" + mergeTag + ".root";
-    std::string outFileNameLangauFit = dir + "test/AppCorrFac/langaufit_" + mergeTag + ".root";
+    //std::string startPeriodCompute  = "20181001";
+    //std::string stopPeriodCompute   = "20181009";
+    //std::string startPeriodApply    = "20181001"; /* = "20181101"; */
+    //std::string stopPeriodApply     = "20181009"; /* = "20181109"; */
+
+    //std::string dirComputeNotCorrected  = "/beegfs/users/ruina/VAequalisation/out/periodCompute/" + startPeriodCompute + "_" + stopPeriodCompute + "/not_corrected";
+    //std::string dirComputeCorrected     = "/beegfs/users/ruina/VAequalisation/out/periodCompute/" + startPeriodCompute + "_" + stopPeriodCompute + "/corrected";
+    //std::string dirApplyNotCorrected    = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/not_corrected";
+    //std::string dirApplyCorrected       = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected";
+
+    //std::string mergeTag = "030220_174755"; //dirComputeNotCorrected 
+    //std::string mergeTag = ""; // dirComputeCorrected
+    //std::string mergeTag = "030220_112552"; //dirApplyNotCorrected 
+    //std::string mergeTag = "050220_160930"; //dirApplyCorrected
+
+
+
+
+    /////////////       To make langaufits, MPVgausfits and compute corrFac...
+    
+    //std::string startPeriodA = "20181001";
+    //std::string stopPeriodA  = "20181009";
+    //std::string dirA = "/beegfs/users/ruina/VAequalisation/out/periodA/data_selection_cuts/" + startPeriodA + "_" + stopPeriodA + "/";
+    //std::string dirA = "/beegfs/users/ruina/VAequalisation/out/periodA/data_corrected/" + startPeriodA + "_" + stopPeriodA + "/";
+    //
+    ////std::string mergeTag = "030220_174755";
+    ////std::string inFileNameLangauFit     = dirA + "merged/" + mergeTag + ".root";
+    ////std::string outFileNameLangauFit    = dirA + "langaufit/" + mergeTag + ".root";
+    ////std::string outFileNameMPVGausFit   = dirA + "gausfitMPV/" + mergeTag + ".root";
+    ////std::string outFileNameCorrFac      = dirA + "corrFac/" + mergeTag + ".root";
+    //
+    //////////////        To make langaufits and MPVgausfits only...
+    //
+    //std::string startPeriodB = "20181101";
+    //std::string stopPeriodB  = "20181109";
+    //std::string dirB1 = "/beegfs/users/ruina/VAequalisation/out/periodB/data_selection_cuts/" + startPeriodB + "_" + stopPeriodB + "/";
+    //std::string dirB2 = "/beegfs/users/ruina/VAequalisation/out/periodB/data_corrected/" + startPeriodB + "_" + stopPeriodB + "/";
+
+    //////////////        ... for /data_selection_cuts
+    //    
+    ////std::string mergeTag = "030220_112552";
+    ////std::string inFileNameLangauFit  = dirB1 + "merged/" + mergeTag + ".root";
+    ////std::string outFileNameLangauFit = dirB1 + "langaufit/" + mergeTag + ".root";
+    ////std::string outFileNameMPVGausFit = dirB1 + "gausfitMPV/" + mergeTag + ".root";
+    ////std::string outFileNameCorrFac;
+    //
+    //////////////        ... for /data_corrected
+    //    
+    //std::string mergeTag = "050220_160930";
+    //std::string inFileNameLangauFit  = dirB2 + "merged/" + mergeTag + ".root";
+    //std::string outFileNameLangauFit = dirB2 + "langaufit/" + mergeTag + ".root";
+    //std::string outFileNameMPVGausFit = dirB2 + "gausfitMPV/" + mergeTag + ".root";
+    //std::string outFileNameCorrFac;
+    
 };
 //global constants
 //#define N_VA        1152

@@ -84,12 +84,31 @@
         int clusterVA           = -99;
         int clusterEtaReg       = -99;
 
-        std::string computeDataPeriodStart = "20181001";
-        std::string computeDataPeriodStop  = "20181009";
-        std::string mergeTag = "231019_112429";
-        std::string dir = "/beegfs/users/ruina/VAequalisation/out/" + computeDataPeriodStart + "_" + computeDataPeriodStop + "/";
-        std::string inFileNameCorrFac = dir + "test/corrFac_" + mergeTag + ".root";
+        std::string startPeriodCompute = "20181001";
+        std::string stopPeriodCompute  = "20181009";
+        
+        //std::string startPeriodApply = "20181101";
+        //std::string stopPeriodComputepply  = "20181109";
+        //std::string startPeriodApply = "20181001";
+        //std::string stopPeriodApply  = "20181009";
+        std::string startPeriodApply = "20180901";
+        std::string stopPeriodApply  = "20180909";
+        //std::string startPeriodApply = "20181201";
+        //std::string stopPeriodApply  = "20181209";
+       
+        // without applying correction
+        std::string dirA = "/beegfs/users/ruina/VAequalisation/out/periodCompute/" + startPeriodCompute + "_" + stopPeriodCompute + "/not_corrected";
+        std::string dirB = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/not_corrected";
 
+        // applying correction
+        std::string dirBcorr = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected" ;
+        
+        std::string mergeTag = "030220_174755";
+        std::string inFileNameCorrFac = dirA + "/corrFac/" + mergeTag + ".root";
+        std::string outFileName;
+        TFile *inFileCorrFac;
+        std::string hCorrFacName = "hCorrFac";
+        TH2D *hCorrFac;
 //};
 
 #endif

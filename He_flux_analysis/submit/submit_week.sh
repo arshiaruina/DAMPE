@@ -6,9 +6,12 @@
 
 #ex=eta_executables/eta_tq3.exe
 #ex=eta.exe
-ex=../va_equalisation
+#ex=../va_equalisation
+
+ex=../va_eq_12
 #splitfile=../resources/201810_wk1_split/aa
-for splitfile in ../resources/201810_wk1_split/*; do
+for splitfile in ../resources/201812_wk1_split/*; do
+#for splitfile in ../resources/201811_wk1_split/*; do
 	sbatch run.sh $ex $splitfile
 done
 

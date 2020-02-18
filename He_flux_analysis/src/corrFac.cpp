@@ -13,7 +13,8 @@ std::pair <double, double> corrFac::MPVGausFit(std::string inFileNameMPVGausFit)
     //TFile *outFileMPVGausFit = new TFile("../out/20181001_20181009/MPV_langaufit_231019_112429.root", "RECREATE"); 
     //TFile *outFileMPVGausFit = new TFile("../out/20181001_20181009/gausfitMPV_20181001_20181009_FMVAs.root", "RECREATE"); 
     //TFile *outFileMPVGausFit = new TFile("test_gausfitMPV_20181001_20181009_FMVAs.root", "RECREATE"); 
-    std::string outFileNameMPVGausFit = "gausfitMPV_20181001_20181009_FMVAs.root";
+   
+    //std::string outFileNameMPVGausFit = "gausfitMPV_20181001_20181009_FMVAs.root"; // this line shifted to the header file on 04.02.2020
     TFile *outFileMPVGausFit = new TFile(outFileNameMPVGausFit.c_str(), "RECREATE"); 
 
     std::string histName0 = "hMPV0";
@@ -63,6 +64,11 @@ std::pair <double, double> corrFac::MPVGausFit(std::string inFileNameMPVGausFit)
     c0->Write();
     c1->Write();
 
+    //I made some changes here on 04.02.2020
+    //outFileMPVGausFit->Close();
+    //outFileMPVGausFit->WriteTObject(hist0);
+    //outFileMPVGausFit->WriteTObject(hist1);
+    //outFileMPVGausFit->cd();
     outFileMPVGausFit->Write();
     outFileMPVGausFit->Close();
 
@@ -289,66 +295,112 @@ std::string corrFac::VAEnergyLangauFit(){
     
 }
 
-void corrFac::Compute(){
+void corrFac::Compute(bool computeFlag){
 
     eqParams = MPVGausFit(VAEnergyLangauFit());   
+    
+    if (!computeFlag) return;   
+    
+    else{
 
-    TFile *outFileCorrFac = new TFile(outFileNameCorrFac.c_str(), "RECREATE");
-
-    for(int iiladder = 0; iiladder < nLADDER; iiladder++){
-    //for(int iiladder = 48; iiladder < 50; iiladder++){
-    //int iiladder = 48;
-        for(int iiva = 0; iiva < nVA; iiva++){
-
-            //corrFac for eta region 0, stored in a 2D array
-            corrFac0[iiladder][iiva] = eqParams.first/MPV0[iiladder][iiva];
-            std::cout << "[DEBUG] " << corrFac0[iiladder][iiva] << std::endl;
-            std::cout << "[DEBUG] " << iiladder << " " << iiva << " " << MPV0[iiladder][iiva] << std::endl;
-
-            //corrFac for eta region 1, stored in a 2D array
-            corrFac1[iiladder][iiva] = eqParams.second/MPV1[iiladder][iiva];
-
-            //corrFac for eta region 0, stored in a histogram, saved to outFileCorrFac
-            hCorrFac->SetBinContent(iiladder+1,iiva+1,corrFac0[iiladder][iiva]);
-
-            //histograms to see the distribution / spread of the values of the corrFacs
-            hCorrFac0->Fill(corrFac0[iiladder][iiva]);
-            hCorrFac1->Fill(corrFac1[iiladder][iiva]);
-            hCorrFacDiff->Fill(corrFac0[iiladder][iiva]-corrFac1[iiladder][iiva]);
+        TFile *outFileCorrFac = new TFile(outFileNameCorrFac.c_str(), "RECREATE");
+    
+        for(int iiladder = 0; iiladder < nLADDER; iiladder++){
+        //for(int iiladder = 48; iiladder < 50; iiladder++){
+        //int iiladder = 48;
+            for(int iiva = 0; iiva < nVA; iiva++){
+    
+                //corrFac for eta region 0, stored in a 2D array
+                corrFac0[iiladder][iiva] = eqParams.first/MPV0[iiladder][iiva];
+                std::cout << "[DEBUG] " << corrFac0[iiladder][iiva] << std::endl;
+                std::cout << "[DEBUG] " << iiladder << " " << iiva << " " << MPV0[iiladder][iiva] << std::endl;
+    
+                //corrFac for eta region 1, stored in a 2D array
+                corrFac1[iiladder][iiva] = eqParams.second/MPV1[iiladder][iiva];
+    
+                //corrFac for eta region 0, stored in a histogram, saved to outFileCorrFac
+                hCorrFac->SetBinContent(iiladder+1,iiva+1,corrFac0[iiladder][iiva]);
+    
+                //histograms to see the distribution / spread of the values of the corrFacs
+                hCorrFac0->Fill(corrFac0[iiladder][iiva]);
+                hCorrFac1->Fill(corrFac1[iiladder][iiva]);
+                hCorrFacDiff->Fill(corrFac0[iiladder][iiva]-corrFac1[iiladder][iiva]);
+            }
         }
+    
+        //gStyle->SetPalette(kBird); //can be used only in ROOT 6 and higher versions
+        hCorrFac->SetOption("COLZ");
+        hCorrFac->SetContour(20);
+        hCorrFac->SetStats(0);
+        hCorrFac->SetMinimum(0.9);
+        hCorrFac->SetMaximum(1.1);
+    
+        outFileCorrFac->WriteTObject(hCorrFac);
+        outFileCorrFac->WriteTObject(hCorrFac0);
+        outFileCorrFac->WriteTObject(hCorrFac1);
+        outFileCorrFac->WriteTObject(hCorrFacDiff);
+        outFileCorrFac->cd();
+        outFileCorrFac->Write();
+        outFileCorrFac->Close();
+    
+        return;
     }
-
-    //gStyle->SetPalette(kBird); //can be used only in ROOT 6 and higher versions
-    hCorrFac->SetOption("COLZ");
-    hCorrFac->SetContour(20);
-    hCorrFac->SetStats(0);
-    hCorrFac->SetMinimum(0.9);
-    hCorrFac->SetMaximum(1.0);
-
-    outFileCorrFac->WriteTObject(hCorrFac);
-    outFileCorrFac->WriteTObject(hCorrFac0);
-    outFileCorrFac->WriteTObject(hCorrFac1);
-    outFileCorrFac->WriteTObject(hCorrFacDiff);
-    outFileCorrFac->cd();
-    outFileCorrFac->Write();
-    outFileCorrFac->Close();
-
-    return;
 }
 
 int main(){
 
+    std::string startPeriodCompute  = "20181001";
+    std::string stopPeriodCompute   = "20181009";
+    std::string startPeriodApply    = /*"20181201";*/ "20180901"; /*"20181001";*/ /* = "20181101"; */
+    std::string stopPeriodApply     = /*"20181209";*/ "20180909"; /*"20181009";*/ /* = "20181109"; */
+    std::string dir, mergeTag;
+    //std::string task = "CompNotCorr";
+    //std::string task = "CompCorr";
+    //std::string task = "AppNotCorr";
+    std::string task = "AppCorr";
+   
+    if(task=="CompNotCorr"){
+        dir = "/beegfs/users/ruina/VAequalisation/out/periodCompute/" + startPeriodCompute + "_" + stopPeriodCompute + "/not_corrected";
+        mergeTag = "030220_174755";
+    }
+    if(task=="CompCorr"){
+        dir = "/beegfs/users/ruina/VAequalisation/out/periodCompute/" + startPeriodCompute + "_" + stopPeriodCompute + "/corrected";
+        mergeTag = "";
+    }
+    if(task=="AppNotCorr"){ 
+        //201809
+        //dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/not_corrected";
+        //mergeTag = "120220_212503"; /*"030220_112552";*/
+        //201812
+        dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/not_corrected";
+        mergeTag = "120220_213649"; /*"030220_112552";*/
+    }
+    if(task=="AppCorr"){ 
+    //201810
+        //dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected";
+        //mergeTag = "120220_220045";
+    //201809
+        dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected";
+        mergeTag = "130220_164432";
+    //201812
+        //dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected";
+        //mergeTag = "130220_165835";
+    }
+    
     corrFac myCorrFacObj;
+    myCorrFacObj.inFileNameLangauFit  = dir + "/merged/" + mergeTag + ".root";
+    myCorrFacObj.outFileNameLangauFit = dir + "/langaufit/" + mergeTag + ".root";
+    myCorrFacObj.outFileNameMPVGausFit = dir + "/gausfitMPV/" + mergeTag + ".root";
+    
 
-    bool flagAppCorrFac = true;
+    //bool flagComputeCorrFac = true;
+    bool flagComputeCorrFac = false;
+    
     //TODO make langau fits to histograms where correction factors have been applied
     //TODO give the filename as an argument
-    if(flagAppCorrFac){
-        myCorrFacObj.VAEnergyLangauFit();
-    }
-    else{
-        myCorrFacObj.Compute();
-    }
+
+    myCorrFacObj.Compute(flagComputeCorrFac);
+    
     //std::cout << "Gaussian fit to the MPVs..." << std::endl;
     //std::pair<double, double> eqParams = myCorrFacObj.MPVGausFit(myCorrFacObj.VAEnergyLangauFit());
     //std::cout << eqParams.first << std::endl;
