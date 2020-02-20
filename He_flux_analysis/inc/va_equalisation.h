@@ -68,6 +68,7 @@
         int total[N_LADDER][N_VA] = {0};
         //storage for names of the histograms
         std::vector<std::string> histoNamesX, histoNamesY;
+        std::vector<double> checkEnergyVec;
         //std::stringstream ssX, ssY;
         TH1D* hEtaX;
         TH1D* hEtaY;
@@ -76,6 +77,7 @@
         double cosTheta         = -99.;
         double clusterEta       = -99.;
         double clusterEnergy    = -99.;
+        double clusterEnergyAdc = 0.;
         //double inclPerp;         
         //int inclPerpIndex;            
         int ladderNumber        = -99;

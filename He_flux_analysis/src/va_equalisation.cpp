@@ -214,6 +214,9 @@ int main(int argc, char** argv) {
     TClonesArray* stkclusters  = new TClonesArray("DmpStkSiCluster"); // name of the class
 	t->SetBranchAddress("StkClusterCollection",&stkclusters); // name of the branch
 
+    TClonesArray* stkladderadc = new TClonesArray("DmpStkLadderAdc"); // name of the class
+	t->SetBranchAddress("DmpStkLadderAdcCollection",&stkladderadc); // name of the branch
+
     /* =====================================================
     
      Before submitting a job, check:
@@ -235,8 +238,8 @@ int main(int argc, char** argv) {
 	//std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
 	//std::string outFileName = "../test/" + inFileName.substr(found+1);
 
-    bool flagAppCorrFac = true;   //for corrFac application
-    //bool flagAppCorrFac = false;    //without corrFac application
+    //bool flagAppCorrFac = true;   //for corrFac application
+    bool flagAppCorrFac = false;    //without corrFac application
 
     //std::string outFileName;
     //TFile *inFileCorrFac = new TFile(inFileNameCorrFac.c_str());
@@ -248,7 +251,8 @@ int main(int argc, char** argv) {
     }
     else {
         //outFileName = dirA + "/unmerged/" + inFileName.substr(found+1);
-        outFileName = dirB + "/unmerged/" + inFileName.substr(found+1);
+        //outFileName = dirB + "/unmerged/" + inFileName.substr(found+1);
+        outFileName = "tmp/" + inFileName.substr(found+1);
     }
     TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
 
@@ -289,7 +293,8 @@ int main(int argc, char** argv) {
     TH1I* hNTracks 			= new TH1I("hNTracks","No. of tracks that passed all cuts",10,0,10);    
     TH1D* hSmeanX 			= new TH1D("hSmeanX","hSmeanX",50,0.,5.);    
     TH1D* hSmeanY 			= new TH1D("hSmeanY","hSmeanY",50,0.,5.);    
-
+    TH1D* hCheckEnergy 	    = new TH1D("hCheckEnergy","AdcValue - Energy",1000,-500.,500.);    
+    
 	//.. std::vector<TH2D*> hEtaEnergyVec;
 	//.. for(int ihist = 0; ihist < 12; ihist++){
 	//.. 	//std::string name = "hEtaEnergy_" + std::to_string(ihist);
@@ -323,7 +328,7 @@ int main(int argc, char** argv) {
         if(stkhelper->GetSize() == 0) continue;
         std::vector<int> vTrackIndex;
 
-        //std::cout << "track loop to make selections" << std::endl;
+        std::cout << "track loop to make selections" << std::endl;
 
 		//for(int itrack = 0; itrack <= stktracks->GetLast(); itrack++){
 		for(int itrack = 0; itrack < stkhelper->GetSize(); itrack++){ // track loop to make selections
@@ -401,9 +406,12 @@ int main(int argc, char** argv) {
 
     	} // end of loop over tracks
 
+        std::cout << "end of loop over tracks, selection" << std::endl;
+
     	if(vTrackIndex.empty()) continue;
 
-        //std::cout << "track loop " << std::endl;
+        std::cout << "track loop " << std::endl;
+        std::cout << "size of track vector " << vTrackIndex.size() << std::endl;
 
     	// loop over selected tracks
     	for(unsigned int itrack = 0; itrack < vTrackIndex.size(); itrack++){
@@ -413,6 +421,8 @@ int main(int argc, char** argv) {
 			DmpStkTrack* stktrack = (DmpStkTrack*) stkhelper->GetTrack(itrack);
 			/*double*/ cosTheta = stktrack->getDirection().CosTheta();
 
+            std::cout << "points loop " << std::endl;
+            
             //int nClusterX = 0;
             //int nClusterY = 0;
             //double sMeanX = 0.;
@@ -438,6 +448,9 @@ int main(int argc, char** argv) {
                 //hMeasCovXXSqrt->Fill(std::sqrt(stktrack->getMeasCovXX(ipoint)));
                 //hMeasCovYYSqrt->Fill(std::sqrt(stktrack->getMeasCovYY(ipoint)));
 
+
+                std::cout << "xy loop " << std::endl;
+                
                 for(int ixy = 0; ixy < 2; ixy++){
 
 					if(ixy == 0){
@@ -451,7 +464,11 @@ int main(int argc, char** argv) {
                         //hDistanceY -> Fill(std::abs(stktrack->getHitMeasY(ipoint) - stktrack->getHitY(ipoint)));
                     }
             		if(!stkcluster) continue;
-		
+
+                    std::cout << "problem 1" << std::endl;
+        
+                    clusterEnergyAdc = 0.;
+                                    
                     clusterFirstStrip = stkcluster -> getFirstStrip();
                     clusterLastStrip = stkcluster -> getLastStrip();
   
@@ -480,8 +497,26 @@ int main(int argc, char** argv) {
                          clusterEnergy = stkcluster->getEnergy() * cosTheta * hCorrFac->GetBinContent(ladderNumber+1,clusterVA+1);
                      }
                      else {
-                         clusterEnergy = stkcluster->getEnergy() * cosTheta;
-                     }          
+                         //clusterEnergy = stkcluster->getEnergy() * cosTheta;
+                         clusterEnergy = stkcluster->getEnergy();
+                     }     
+
+                    std::cout << "problem 2" << std::endl;
+                    std::cout << "clusterFirstStrip " << clusterFirstStrip << std::endl;
+                    std::cout <<  "clusterLastStrip " << clusterLastStrip << std::endl;
+                    
+                    //To check if getEnergy is same as GetADCValue summed over all strips
+                    //for(int istrip = clusterFirstStrip; istrip <= clusterLastStrip; istrip++){
+                    for(int istrip = 0; istrip < stkcluster->getNstrip(); istrip++){
+                        //clusterEnergyAdc += stkladderadc->GetChannelAdc(istrip);
+                        // ERROR: ‘class TClonesArray’ has no member named ‘GetChannelAdc’
+                        clusterEnergyAdc += stkcluster->GetAdcValue(istrip,stkladderadc);
+                    }
+
+                    hCheckEnergy->Fill(clusterEnergyAdc - clusterEnergy);
+                    checkEnergyVec.push_back(clusterEnergyAdc - clusterEnergy);
+                
+
                     clusterEta = CalcEta(stkcluster);
 
                     //if(ixy == 0 /*&& clusterEta != 0 && clusterEta != 1*/) {
@@ -501,6 +536,7 @@ int main(int argc, char** argv) {
                     clusterVA = GetVANumber(clusterFirstStrip, clusterLastStrip);
                     clusterEtaReg = GetEtaRegion(clusterEta);
 
+                    std::cout << "problem 3" << std::endl;
                     /*------- checks for the low energy peak in the VA charge distribution -------*/
         
                     // (1) caused by clusters on VA edge?
@@ -530,6 +566,7 @@ int main(int argc, char** argv) {
 					//hEtaEnergyVec.at(inclPerpIndex)->Fill(clusterEta, clusterEnergy);
 					//hEtaEnergyVec.at(inclPerpIndex)->Draw("colz");
 			
+                    std::cout << "problem 4" << std::endl;
 	                
     			} // end of loop over x and y clusters
 			} // end of loop over points
@@ -539,7 +576,18 @@ int main(int argc, char** argv) {
 
     	} // end of loop over tracks
 
+        std::cout << "end of another loop over tracks" << std::endl;
+
 	} // end of loop over entries
+
+    if(checkEnergyVec.empty()){
+        std::cout << "my vec empty!" << std::endl;
+    }
+    else{
+        for(unsigned int ivec=0; ivec < checkEnergyVec.size(); ivec++){
+            std::cout << checkEnergyVec.at(ivec) << std::endl;
+        }
+    }
 
     //std::cout << "making checkfile" << std::endl;
 
