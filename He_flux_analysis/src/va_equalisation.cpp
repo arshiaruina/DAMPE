@@ -24,7 +24,7 @@ bool** read_bad_channels_file(const char* filename){
     ifstream infile(filename);
     if (!infile)
     {
-        std::cout<<"Can't open Bad Channels file: "<<filename<<" ==> throwing exception!"<<std::endl;
+        std::cout << "[INFO] Can't open Bad Channels file: " << filename << " ==> throwing exception!" << std::endl;
         throw;
     }
     std::string line;
@@ -49,7 +49,7 @@ bool** read_bad_channels_file(const char* filename){
             badchannels[ildr][bdchnl] = true;
         }
     }
-    std::cout<<"Done reading bad channels"<<std::endl;
+    std::cout << "[INFO] Done reading bad channels" << std::endl;
     return badchannels;
 } // end read_bad_channels_file
 
@@ -238,8 +238,8 @@ int main(int argc, char** argv) {
 	//std::string outFileName = "../out/201810/" + inFileName.substr(found+1);
 	//std::string outFileName = "../test/" + inFileName.substr(found+1);
 
-    //bool flagAppCorrFac = true;   //for corrFac application
-    bool flagAppCorrFac = false;    //without corrFac application
+    bool flagAppCorrFac = true;   //for corrFac application
+    //bool flagAppCorrFac = false;    //without corrFac application
 
     //std::string outFileName;
     //TFile *inFileCorrFac = new TFile(inFileNameCorrFac.c_str());
@@ -250,9 +250,9 @@ int main(int argc, char** argv) {
         outFileName = dirBcorr + "/unmerged/" + inFileName.substr(found+1);
     }
     else {
-        //outFileName = dirA + "/unmerged/" + inFileName.substr(found+1);
+        outFileName = dirA + "/unmerged/" + inFileName.substr(found+1);
         //outFileName = dirB + "/unmerged/" + inFileName.substr(found+1);
-        outFileName = "tmp/" + inFileName.substr(found+1);
+        //outFileName = "tmp/" + inFileName.substr(found+1);
     }
     TFile *outFile = new TFile(outFileName.c_str(), "RECREATE");
 
@@ -312,10 +312,10 @@ int main(int argc, char** argv) {
 
 	int nEntries = t->GetEntries();
 
-    std::cout << "variables set, starting loop over entries..." << std::endl;
+    std::cout << "[INFO] variables set, starting loop over entries..." << std::endl;
 
-	for (int i = 0; i < nEntries; i++){ // uncomment for analysis run
-	//for (int i = 0; i < 100; i++){ // uncomment for debug run
+	//for (int i = 0; i < nEntries; i++){ // uncomment for analysis run
+    for (int i = 0; i < 100; i++){ // uncomment for debug run
 
 		float progress = 100.0 * ((float) i) / ((float) nEntries);
         //if (!(i % 10)) cout << setprecision(3) << " [ " << progress << " % ] \r";
@@ -328,7 +328,7 @@ int main(int argc, char** argv) {
         if(stkhelper->GetSize() == 0) continue;
         std::vector<int> vTrackIndex;
 
-        std::cout << "track loop to make selections" << std::endl;
+        //std::cout << "[DEBUG] track loop to make selections" << std::endl;
 
 		//for(int itrack = 0; itrack <= stktracks->GetLast(); itrack++){
 		for(int itrack = 0; itrack < stkhelper->GetSize(); itrack++){ // track loop to make selections
@@ -406,12 +406,12 @@ int main(int argc, char** argv) {
 
     	} // end of loop over tracks
 
-        std::cout << "end of loop over tracks, selection" << std::endl;
+        //std::cout << "[DEBUG] end of loop over tracks, selection" << std::endl;
 
     	if(vTrackIndex.empty()) continue;
 
-        std::cout << "track loop " << std::endl;
-        std::cout << "size of track vector " << vTrackIndex.size() << std::endl;
+        //std::cout << "[DEBUG] track loop " << std::endl;
+        //std::cout << "[DEBUG] size of track vector " << vTrackIndex.size() << std::endl;
 
     	// loop over selected tracks
     	for(unsigned int itrack = 0; itrack < vTrackIndex.size(); itrack++){
@@ -421,7 +421,7 @@ int main(int argc, char** argv) {
 			DmpStkTrack* stktrack = (DmpStkTrack*) stkhelper->GetTrack(itrack);
 			/*double*/ cosTheta = stktrack->getDirection().CosTheta();
 
-            std::cout << "points loop " << std::endl;
+            //std::cout << "[DEBUG] points loop " << std::endl;
             
             //int nClusterX = 0;
             //int nClusterY = 0;
@@ -449,7 +449,7 @@ int main(int argc, char** argv) {
                 //hMeasCovYYSqrt->Fill(std::sqrt(stktrack->getMeasCovYY(ipoint)));
 
 
-                std::cout << "xy loop " << std::endl;
+                //std::cout << "[DEBUG] xy loop " << std::endl;
                 
                 for(int ixy = 0; ixy < 2; ixy++){
 
@@ -465,8 +465,6 @@ int main(int argc, char** argv) {
                     }
             		if(!stkcluster) continue;
 
-                    std::cout << "problem 1" << std::endl;
-        
                     clusterEnergyAdc = 0.;
                                     
                     clusterFirstStrip = stkcluster -> getFirstStrip();
@@ -492,30 +490,25 @@ int main(int argc, char** argv) {
                     // 2. reco with 6 hits on the XZ and YZ planes -- immediately at the start of loop over tracks 
 
                     // 3. |Z|=1            
-
-                    if(flagAppCorrFac){
-                         clusterEnergy = stkcluster->getEnergy() * cosTheta * hCorrFac->GetBinContent(ladderNumber+1,clusterVA+1);
-                     }
-                     else {
-                         //clusterEnergy = stkcluster->getEnergy() * cosTheta;
-                         clusterEnergy = stkcluster->getEnergy();
-                     }     
-
-                    std::cout << "problem 2" << std::endl;
-                    std::cout << "clusterFirstStrip " << clusterFirstStrip << std::endl;
-                    std::cout <<  "clusterLastStrip " << clusterLastStrip << std::endl;
                     
-                    //To check if getEnergy is same as GetADCValue summed over all strips
-                    //for(int istrip = clusterFirstStrip; istrip <= clusterLastStrip; istrip++){
                     for(int istrip = 0; istrip < stkcluster->getNstrip(); istrip++){
-                        //clusterEnergyAdc += stkladderadc->GetChannelAdc(istrip);
-                        // ERROR: ‘class TClonesArray’ has no member named ‘GetChannelAdc’
                         clusterEnergyAdc += stkcluster->GetAdcValue(istrip,stkladderadc);
                     }
+                    
+                    std::cout << "clusterEnergyAdc: " << clusterEnergyAdc << std::endl;
 
-                    hCheckEnergy->Fill(clusterEnergyAdc - clusterEnergy);
-                    checkEnergyVec.push_back(clusterEnergyAdc - clusterEnergy);
-                
+                    if(flagAppCorrFac){
+                        //clusterEnergy = stkcluster->getEnergy() * cosTheta * hCorrFac->GetBinContent(ladderNumber+1,clusterVA+1);
+                        clusterEnergyAdc *= hCorrFac->GetBinContent(ladderNumber+1,clusterVA+1);
+                    }
+                    
+                    std::cout << "corrFac: " << hCorrFac->GetBinContent(ladderNumber+1,clusterVA+1) << std::endl;
+                    std::cout << "clusterEnergyAdc(corr): " << clusterEnergyAdc << std::endl;
+
+                    //else {
+                    //    //clusterEnergy = stkcluster->getEnergy() * cosTheta;
+                    //    clusterEnergy = stkcluster->getEnergy();
+                    //}     
 
                     clusterEta = CalcEta(stkcluster);
 
@@ -536,7 +529,6 @@ int main(int argc, char** argv) {
                     clusterVA = GetVANumber(clusterFirstStrip, clusterLastStrip);
                     clusterEtaReg = GetEtaRegion(clusterEta);
 
-                    std::cout << "problem 3" << std::endl;
                     /*------- checks for the low energy peak in the VA charge distribution -------*/
         
                     // (1) caused by clusters on VA edge?
@@ -554,10 +546,14 @@ int main(int argc, char** argv) {
                     //std::cout << "cluster VA: " << clusterVA << std::endl;
 
                     if(clusterVA < 0 || clusterEtaReg < 0) continue;
-                    if(IsLadderX1(ladderNumber)) hVAEnergyX[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
-                    if(IsLadderX2(ladderNumber)) hVAEnergyX[ladderNumber-96][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
-                    if(IsLadderY1(ladderNumber)) hVAEnergyY[ladderNumber][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
-                    if(IsLadderY2(ladderNumber)) hVAEnergyY[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
+                    //if(IsLadderX1(ladderNumber)) hVAEnergyX[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
+                    //if(IsLadderX2(ladderNumber)) hVAEnergyX[ladderNumber-96][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
+                    //if(IsLadderY1(ladderNumber)) hVAEnergyY[ladderNumber][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
+                    //if(IsLadderY2(ladderNumber)) hVAEnergyY[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergy); 
+                    if(IsLadderX1(ladderNumber)) hVAEnergyX[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergyAdc); 
+                    if(IsLadderX2(ladderNumber)) hVAEnergyX[ladderNumber-96][clusterVA][clusterEtaReg] -> Fill(clusterEnergyAdc); 
+                    if(IsLadderY1(ladderNumber)) hVAEnergyY[ladderNumber][clusterVA][clusterEtaReg] -> Fill(clusterEnergyAdc); 
+                    if(IsLadderY2(ladderNumber)) hVAEnergyY[ladderNumber-48][clusterVA][clusterEtaReg] -> Fill(clusterEnergyAdc); 
                    	//inclPerpIndex = CalcInclIndex(stktrack,"y");
 					//inclPerpIndex = CalcInclIndex(stktrack,"x");
 
@@ -566,7 +562,6 @@ int main(int argc, char** argv) {
 					//hEtaEnergyVec.at(inclPerpIndex)->Fill(clusterEta, clusterEnergy);
 					//hEtaEnergyVec.at(inclPerpIndex)->Draw("colz");
 			
-                    std::cout << "problem 4" << std::endl;
 	                
     			} // end of loop over x and y clusters
 			} // end of loop over points
@@ -576,18 +571,35 @@ int main(int argc, char** argv) {
 
     	} // end of loop over tracks
 
-        std::cout << "end of another loop over tracks" << std::endl;
+        //std::cout << "[DEBUG] end of final loop over tracks" << std::endl;
 
 	} // end of loop over entries
 
-    if(checkEnergyVec.empty()){
-        std::cout << "my vec empty!" << std::endl;
-    }
-    else{
-        for(unsigned int ivec=0; ivec < checkEnergyVec.size(); ivec++){
-            std::cout << checkEnergyVec.at(ivec) << std::endl;
+    std::cout << "[INFO] Creating overlaid histogram of energy distributions of all VAs" << std::endl;
+
+    //TODO: ADC value distribution for all VAs together
+/*    TCanvas* cAllVA = new TCanvas ("cAllVA","Energy distribution of all VAs",800,600);
+    TH1D* hEmp = new TH1D ("hEmp","hEmp",200,0.,200.);
+    hEmp->Draw("hist");
+    cAllVA->Update();
+    for(int iladder = 0; iladder < N_LADDER/2; iladder++) {
+        for(int iva = 0; iva < N_VA; iva++){
+            for(int ietareg = 0; ietareg < 2; ietareg++){
+              
+                if(IsLadderX1(iladder)) hVAEnergyX[iladder-48][iva][ietareg] -> Draw("hist same"); 
+                if(IsLadderX2(iladder)) hVAEnergyX[iladder-96][iva][ietareg] -> Draw("hist same");
+                if(IsLadderY1(iladder)) hVAEnergyY[iladder][iva][ietareg] -> Draw("hist same");
+                if(IsLadderY2(iladder)) hVAEnergyY[iladder-48][iva][ietareg] -> Draw("hist same");
+
+                cAllVA->Update();
+            }
         }
     }
+    
+    cAllVA->Write();
+*/
+    
+    //std::cout << "[DEBUG] end of loop over entries" << std::endl;
 
     //std::cout << "making checkfile" << std::endl;
 
@@ -622,9 +634,9 @@ int main(int argc, char** argv) {
 	outFile->Write();
 	outFile->Close();
 	if (outFile->IsZombie())
-        std::cout << "Error opening output file!" << std::endl;
+        std::cout << "[INFO] Error opening output file!" << std::endl;
     else
-        std::cout << outFileName << " created." << std::endl;
+        std::cout << "[INFO] " << outFileName << " created." << std::endl;
 	sw.Stop();
     sw.Print();
 } // end of main

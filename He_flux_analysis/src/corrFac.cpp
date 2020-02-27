@@ -351,23 +351,28 @@ int main(){
 
     std::string startPeriodCompute  = "20181001";
     std::string stopPeriodCompute   = "20181009";
-    std::string startPeriodApply    = /*"20181201";*/ "20180901"; /*"20181001";*/ /* = "20181101"; */
-    std::string stopPeriodApply     = /*"20181209";*/ "20180909"; /*"20181009";*/ /* = "20181109"; */
+    std::string startPeriodApply    = /*"20181201"; "20180901";*/ "20181001"; /* = "20181101"; */
+    std::string stopPeriodApply     = /*"20181209"; "20180909";*/ "20181009"; /* = "20181109"; */
     std::string dir, mergeTag;
     //std::string task = "CompNotCorr";
     //std::string task = "CompCorr";
     //std::string task = "AppNotCorr";
     std::string task = "AppCorr";
    
+    bool flagComputeCorrFac;
+    
     if(task=="CompNotCorr"){
+        flagComputeCorrFac = true;
         dir = "/beegfs/users/ruina/VAequalisation/out/periodCompute/" + startPeriodCompute + "_" + stopPeriodCompute + "/not_corrected";
-        mergeTag = "030220_174755";
+        //mergeTag = "030220_174755";
+        mergeTag = "250220_191643";
     }
-    if(task=="CompCorr"){
-        dir = "/beegfs/users/ruina/VAequalisation/out/periodCompute/" + startPeriodCompute + "_" + stopPeriodCompute + "/corrected";
-        mergeTag = "";
-    }
+    //if(task=="CompCorr"){
+    //    dir = "/beegfs/users/ruina/VAequalisation/out/periodCompute/" + startPeriodCompute + "_" + stopPeriodCompute + "/corrected";
+    //    mergeTag = "";
+    //}
     if(task=="AppNotCorr"){ 
+        flagComputeCorrFac = false;
         //201809
         //dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/not_corrected";
         //mergeTag = "120220_212503"; /*"030220_112552";*/
@@ -376,26 +381,25 @@ int main(){
         mergeTag = "120220_213649"; /*"030220_112552";*/
     }
     if(task=="AppCorr"){ 
-    //201810
-        //dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected";
-        //mergeTag = "120220_220045";
-    //201809
+        flagComputeCorrFac = false;
+        //201810
         dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected";
-        mergeTag = "130220_164432";
-    //201812
+        mergeTag = "270220_000215";
+        //mergeTag = "120220_220045";
+        //201809
+        //dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected";
+        //mergeTag = "130220_164432";
+        //201812
         //dir = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected";
         //mergeTag = "130220_165835";
     }
     
     corrFac myCorrFacObj;
-    myCorrFacObj.inFileNameLangauFit  = dir + "/merged/" + mergeTag + ".root";
-    myCorrFacObj.outFileNameLangauFit = dir + "/langaufit/" + mergeTag + ".root";
-    myCorrFacObj.outFileNameMPVGausFit = dir + "/gausfitMPV/" + mergeTag + ".root";
-    
+    myCorrFacObj.inFileNameLangauFit    = dir + "/merged/" + mergeTag + ".root";
+    myCorrFacObj.outFileNameLangauFit   = dir + "/langaufit/" + mergeTag + ".root";
+    myCorrFacObj.outFileNameMPVGausFit  = dir + "/gausfitMPV/" + mergeTag + ".root";
+    myCorrFacObj.outFileNameCorrFac     = dir + "/corrFac/" + mergeTag + ".root"; 
 
-    //bool flagComputeCorrFac = true;
-    bool flagComputeCorrFac = false;
-    
     //TODO make langau fits to histograms where correction factors have been applied
     //TODO give the filename as an argument
 
