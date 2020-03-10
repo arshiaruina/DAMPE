@@ -77,7 +77,7 @@
         double cosTheta         = -99.;
         double clusterEta       = -99.;
         double clusterEnergy    = -99.;
-        double clusterEnergyAdc = 0.;
+        double clusterEnergyAdc = -99.;
         //double inclPerp;         
         //int inclPerpIndex;            
         int ladderNumber        = -99;
@@ -91,10 +91,10 @@
         
         //std::string startPeriodApply = "20181101";
         //std::string stopPeriodComputepply  = "20181109";
-        //std::string startPeriodApply = "20181001";
-        //std::string stopPeriodApply  = "20181009";
-        std::string startPeriodApply = "20180901";
-        std::string stopPeriodApply  = "20180909";
+        std::string startPeriodApply = "20181001";
+        std::string stopPeriodApply  = "20181009";
+        //std::string startPeriodApply = "20180901";
+        //std::string stopPeriodApply  = "20180909";
         //std::string startPeriodApply = "20181201";
         //std::string stopPeriodApply  = "20181209";
        
@@ -105,7 +105,8 @@
         // applying correction
         std::string dirBcorr = "/beegfs/users/ruina/VAequalisation/out/periodApply/" + startPeriodApply + "_" + stopPeriodApply + "/corrected" ;
         
-        std::string mergeTag = "030220_174755";
+        //std::string mergeTag = "030220_174755";
+        std::string mergeTag = "250220_191643";
         std::string inFileNameCorrFac = dirA + "/corrFac/" + mergeTag + ".root";
         std::string outFileName;
         TFile *inFileCorrFac;
