@@ -175,34 +175,55 @@ int main(int argc, char** argv){
     int nClustersY;
     int nClustersTotal;
     // size of the folllowing vectors will be the number of clusters in the event
-    //std::vector<float> clusterEnergy;
-    //std::vector<float> clusterEnergyAdc;
-    //std::vector<float> clusterEta;
-    //std::vector<int> clusterEtaRegion;
-    //std::vector<int> clusterLadder;
-    //std::vector<int> clusterVA;
+    
+
+    // -------- Variable length vectors ------ //
+
+    std::vector<float> clusterEnergy;
+    std::vector<float> clusterEnergyAdc;
+    std::vector<float> clusterEta;
+    std::vector<int> clusterEtaRegion;
+    std::vector<int> clusterLadder;
+    std::vector<int> clusterVA;
+    
+    outputTree->Branch("nClustersX", &nClustersX, "nClustersX/I");
+    outputTree->Branch("nClustersY", &nClustersY, "nClustersY/I");
+    outputTree->Branch("nClustersTotal", &nClustersTotal, "nClustersTotal/I");
+    outputTree->Branch("clusterEnergy", &clusterEnergy);
+    outputTree->Branch("clusterEnergyAdc", &clusterEnergyAdc);
+    outputTree->Branch("clusterEta", &clusterEta);
+    outputTree->Branch("clusterEtaRegion", &clusterEtaRegion);
+    outputTree->Branch("clusterLadder", &clusterLadder);
+    outputTree->Branch("clusterVA", &clusterVA);
+
+    // -------- Fixed length vectors ------ //
+
     //std::vector<float> clusterEnergy(MINTRACKCLUS,-99.);
     //std::vector<float> clusterEnergyAdc(MINTRACKCLUS,-99.);
     //std::vector<float> clusterEta(MINTRACKCLUS,-99.);
     //std::vector<int> clusterEtaRegion(MINTRACKCLUS,-99);
     //std::vector<int> clusterLadder(MINTRACKCLUS,-99);
     //std::vector<int> clusterVA(MINTRACKCLUS,-99);
-    float clusterEnergy [MINTRACKCLUS] = {0.};
-    float clusterEnergyAdc [MINTRACKCLUS] ={0.};
-    float clusterEta [MINTRACKCLUS] = {0.};
-    int clusterEtaRegion [MINTRACKCLUS] = {0};
-    int clusterLadder [MINTRACKCLUS] = {0};
-    int clusterVA [MINTRACKCLUS] = {0}; 
+    
 
-    outputTree->Branch("nClustersX", &nClustersX, "nClustersX/I");
-    outputTree->Branch("nClustersY", &nClustersY, "nClustersY/I");
-    outputTree->Branch("nClustersTotal", &nClustersTotal, "nClustersTotal/I");
-    outputTree->Branch("clusterEnergy", clusterEnergy, "clusterEnergy[nClustersTotal]/F");
-    outputTree->Branch("clusterEnergyAdc", clusterEnergyAdc, "clusterEnergyAdc[nClustersTotal]/F");
-    outputTree->Branch("clusterEta", clusterEta, "clusterEta[nClustersTotal]/F");
-    outputTree->Branch("clusterEtaRegion", clusterEtaRegion, "clusterEtaRegion[nClustersTotal]/I");
-    outputTree->Branch("clusterLadder", clusterLadder, "clusterLadder[nClustersTotal]/I");
-    outputTree->Branch("clusterVA", clusterVA, "clusterVA[nClustersTotal]/I");
+    // ------- Fixed length arrays -------- //
+
+    //float clusterEnergy [MINTRACKCLUS] = {0.};
+    //float clusterEnergyAdc [MINTRACKCLUS] ={0.};
+    //float clusterEta [MINTRACKCLUS] = {0.};
+    //int clusterEtaRegion [MINTRACKCLUS] = {0};
+    //int clusterLadder [MINTRACKCLUS] = {0};
+    //int clusterVA [MINTRACKCLUS] = {0}; 
+
+    //outputTree->Branch("nClustersX", &nClustersX, "nClustersX/I");
+    //outputTree->Branch("nClustersY", &nClustersY, "nClustersY/I");
+    //outputTree->Branch("nClustersTotal", &nClustersTotal, "nClustersTotal/I");
+    //outputTree->Branch("clusterEnergy", clusterEnergy, "clusterEnergy[nClustersTotal]/F");
+    //outputTree->Branch("clusterEnergyAdc", clusterEnergyAdc, "clusterEnergyAdc[nClustersTotal]/F");
+    //outputTree->Branch("clusterEta", clusterEta, "clusterEta[nClustersTotal]/F");
+    //outputTree->Branch("clusterEtaRegion", clusterEtaRegion, "clusterEtaRegion[nClustersTotal]/I");
+    //outputTree->Branch("clusterLadder", clusterLadder, "clusterLadder[nClustersTotal]/I");
+    //outputTree->Branch("clusterVA", clusterVA, "clusterVA[nClustersTotal]/I");
    
     int nEntries = inputTree->GetEntries();
     for(int ientry = 0; ientry < nEntries; ++ientry)
@@ -212,6 +233,13 @@ int main(int argc, char** argv){
         std::cout << std::setprecision(3) << "[ " << progress << " % ] \r";
 
         inputTree->GetEntry(ientry);
+
+        clusterEnergy.clear();
+        clusterEnergyAdc.clear();
+        clusterEta.clear();
+        clusterEtaRegion.clear();
+        clusterLadder.clear();
+        clusterVA.clear();
 
         stkhelper->SortTracks(4,false);
         if(stkhelper->GetSize() == 0) continue;
@@ -325,19 +353,20 @@ int main(int argc, char** argv){
                 int ladNumber = stkcluster->getLadderHardware();
                 int vaNumber = GetVANumber(stkcluster->getFirstStrip(),stkcluster->getLastStrip());
 
-                int index = ipoint * 2 + ixy;
-                clusterEnergy[index] = energy;
-                clusterEnergyAdc[index] = energyAdc;
-                clusterEta[index] = eta;
-                clusterEtaRegion[index] = etaReg;
-                clusterLadder[index] = ladNumber;
-                clusterVA[index] = vaNumber;
-                //clusterEnergy.push_back(energy);
-                //clusterEnergyAdc.push_back(energyAdc);
-                //clusterEta.push_back(eta);
-                //clusterEtaRegion.push_back(etaReg);
-                //clusterLadder.push_back(ladNumber);
-                //clusterVA.push_back(vaNumber);                
+                //int index = ipoint * 2 + ixy;
+                //clusterEnergy[index] = energy;
+                //clusterEnergyAdc[index] = energyAdc;
+                //clusterEta[index] = eta;
+                //clusterEtaRegion[index] = etaReg;
+                //clusterLadder[index] = ladNumber;
+                //clusterVA[index] = vaNumber;
+                
+                clusterEnergy.push_back(energy);
+                clusterEnergyAdc.push_back(energyAdc);
+                clusterEta.push_back(eta);
+                clusterEtaRegion.push_back(etaReg);
+                clusterLadder.push_back(ladNumber);
+                clusterVA.push_back(vaNumber);                
 
             } // end of loop over x and y clusters
         } // end of loop over points
