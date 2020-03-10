@@ -1,7 +1,7 @@
 // Date: 05.03.2020
 // Source: https://www.nevis.columbia.edu/~seligman/root-class/files/MakeNtuple.C
 
-#include "../inc/makeNtuple.h"
+#include "../inc/ntupleMaker.h"
 
 bool** read_bad_channels_file(const char* filename){
     bool** badchannels = new bool*[N_LADDER];
@@ -166,8 +166,8 @@ int main(int argc, char** argv){
     inputTree->SetBranchAddress("DmpStkLadderAdcCollection",&stkladderadc); 
 
     std::size_t found = inputFileName.find_last_of("/");
-    //std::string outputFileName = "/beegfs/users/ruina/VAequalisation/testNtuples/" + inputFileName.substr(found+1);
-    std::string outputFileName = "/beegfs/users/ruina/VAequalisation/ntuples_20181001_20181009/" + inputFileName.substr(found+1);
+    std::string outputFileName = "/beegfs/users/ruina/VAequalisation/testNtuples/" + inputFileName.substr(found+1);
+    //std::string outputFileName = "/beegfs/users/ruina/VAequalisation/ntuples_20181001_20181009/" + inputFileName.substr(found+1);
     TFile* outputFile = new TFile(outputFileName.c_str(),"recreate");
     TTree* outputTree = new TTree("MySelectionTree","Selections for VA calibration");
 
@@ -181,22 +181,28 @@ int main(int argc, char** argv){
     //std::vector<int> clusterEtaRegion;
     //std::vector<int> clusterLadder;
     //std::vector<int> clusterVA;
-    std::vector<float> clusterEnergy(MINTRACKHITS);
-    std::vector<float> clusterEnergyAdc(MINTRACKHITS);
-    std::vector<float> clusterEta(MINTRACKHITS);
-    std::vector<int> clusterEtaRegion(MINTRACKHITS);
-    std::vector<int> clusterLadder(MINTRACKHITS);
-    std::vector<int> clusterVA(MINTRACKHITS);
-    
-    outputTree->Branch("nClustersX", &nClustersX);
-    outputTree->Branch("nClustersY", &nClustersY);
-    outputTree->Branch("nClustersTotal", &nClustersTotal);
-    outputTree->Branch("clusterEnergy", &clusterEnergy);
-    outputTree->Branch("clusterEnergyAdc", &clusterEnergyAdc);
-    outputTree->Branch("clusterEta", &clusterEta);
-    outputTree->Branch("clusterEtaRegion", &clusterEtaRegion);
-    outputTree->Branch("clusterLadder", &clusterLadder);
-    outputTree->Branch("clusterVA", &clusterVA);
+    //std::vector<float> clusterEnergy(MINTRACKCLUS,-99.);
+    //std::vector<float> clusterEnergyAdc(MINTRACKCLUS,-99.);
+    //std::vector<float> clusterEta(MINTRACKCLUS,-99.);
+    //std::vector<int> clusterEtaRegion(MINTRACKCLUS,-99);
+    //std::vector<int> clusterLadder(MINTRACKCLUS,-99);
+    //std::vector<int> clusterVA(MINTRACKCLUS,-99);
+    float clusterEnergy [MINTRACKCLUS] = {0.};
+    float clusterEnergyAdc [MINTRACKCLUS] ={0.};
+    float clusterEta [MINTRACKCLUS] = {0.};
+    int clusterEtaRegion [MINTRACKCLUS] = {0};
+    int clusterLadder [MINTRACKCLUS] = {0};
+    int clusterVA [MINTRACKCLUS] = {0}; 
+
+    outputTree->Branch("nClustersX", &nClustersX, "nClustersX/I");
+    outputTree->Branch("nClustersY", &nClustersY, "nClustersY/I");
+    outputTree->Branch("nClustersTotal", &nClustersTotal, "nClustersTotal/I");
+    outputTree->Branch("clusterEnergy", clusterEnergy, "clusterEnergy[nClustersTotal]/F");
+    outputTree->Branch("clusterEnergyAdc", clusterEnergyAdc, "clusterEnergyAdc[nClustersTotal]/F");
+    outputTree->Branch("clusterEta", clusterEta, "clusterEta[nClustersTotal]/F");
+    outputTree->Branch("clusterEtaRegion", clusterEtaRegion, "clusterEtaRegion[nClustersTotal]/I");
+    outputTree->Branch("clusterLadder", clusterLadder, "clusterLadder[nClustersTotal]/I");
+    outputTree->Branch("clusterVA", clusterVA, "clusterVA[nClustersTotal]/I");
    
     int nEntries = inputTree->GetEntries();
     for(int ientry = 0; ientry < nEntries; ++ientry)
@@ -227,10 +233,10 @@ int main(int argc, char** argv){
             for (int ipoint = 0; ipoint < stktrack->GetNPoints(); ipoint++) {
 
                 DmpStkSiCluster* stkcluster;
-                float energy = 0.;
-                float eta = 0.;
-                int etaReg = 0;
-                int vaNumber = 0;   
+                //float energy = 0.;
+                //float eta = 0.;
+                //int etaReg = 0;
+                //int vaNumber = 0;   
 
                 for(int ixy = 0; ixy < 2; ixy++){
 
@@ -244,12 +250,14 @@ int main(int argc, char** argv){
                     if(!stkcluster) continue;
                     if(is_cluster_bad_channel(stkcluster, badchannels)) continue;
                     
-                    eta = CalcEta(stkcluster);
-                    etaReg = GetEtaRegion(eta);
-                    vaNumber = GetVANumber(stkcluster->getFirstStrip(), stkcluster->getLastStrip());        
-                    if(eta == 0. || eta == 1. || etaReg < 0 || vaNumber < 0) continue;
+                    float eta = CalcEta(stkcluster);
+                    //etaReg = GetEtaRegion(eta);
+                    int vaNumber = GetVANumber(stkcluster->getFirstStrip(), stkcluster->getLastStrip());
+                    if(eta == 0. || eta == 1.) continue;
+                    //if(etaReg < 0) continue;
+                    if(vaNumber < 0) continue;
 
-                    energy = stkcluster->getEnergy()*cosTheta;
+                    float energy = stkcluster->getEnergy()*cosTheta;
 
                     if(ixy == 0) {
                         nClusX++;
@@ -293,12 +301,12 @@ int main(int argc, char** argv){
             for(int ixy = 0; ixy < 2; ixy++){
 
                 DmpStkSiCluster* stkcluster;
-                float energy = 0.;
+                //float energy = 0.;
                 float energyAdc = 0.;
-                float eta = 0.;
-                int etaReg = 0; 
-                int ladNumber = 0;
-                int vaNumber = 0;
+                //float eta = 0.;
+                //int etaReg = 0; 
+                //int ladNumber = 0;
+                //int vaNumber = 0;
 
                 if(ixy == 0){
                     stkcluster = selectedTrack -> GetClusterX(ipoint,stkclusters);
@@ -311,18 +319,26 @@ int main(int argc, char** argv){
                     energyAdc += stkcluster->GetAdcValue(istrip,stkladderadc);
                 }
                 
-                energy = stkcluster->getEnergy()*cosTheta;
-                eta = CalcEta(stkcluster);
-                etaReg = GetEtaRegion(eta);
-                ladNumber = stkcluster->getLadderHardware();
-                vaNumber = GetVANumber(stkcluster->getFirstStrip(),stkcluster->getLastStrip());
+                float energy = stkcluster->getEnergy()*cosTheta;
+                float eta = CalcEta(stkcluster);
+                int etaReg = GetEtaRegion(eta);
+                int ladNumber = stkcluster->getLadderHardware();
+                int vaNumber = GetVANumber(stkcluster->getFirstStrip(),stkcluster->getLastStrip());
 
-                clusterEnergy.push_back(energy);
-                clusterEnergyAdc.push_back(energyAdc);
-                clusterEta.push_back(eta);
-                clusterEtaRegion.push_back(etaReg);
-                clusterLadder.push_back(ladNumber);
-                clusterVA.push_back(vaNumber);                
+                int index = ipoint * 2 + ixy;
+                clusterEnergy[index] = energy;
+                clusterEnergyAdc[index] = energyAdc;
+                clusterEta[index] = eta;
+                clusterEtaRegion[index] = etaReg;
+                clusterLadder[index] = ladNumber;
+                clusterVA[index] = vaNumber;
+                //clusterEnergy.push_back(energy);
+                //clusterEnergyAdc.push_back(energyAdc);
+                //clusterEta.push_back(eta);
+                //clusterEtaRegion.push_back(etaReg);
+                //clusterLadder.push_back(ladNumber);
+                //clusterVA.push_back(vaNumber);                
+
             } // end of loop over x and y clusters
         } // end of loop over points
              
