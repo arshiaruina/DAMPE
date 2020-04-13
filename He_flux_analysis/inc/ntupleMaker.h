@@ -26,6 +26,7 @@
 #include "TStopwatch.h"
 #include "TSystem.h"
 // DAMPE
+#include "DmpChain.h"
 #include "DmpEvtHeader.h"
 #include "DmpEvtBgoRaw.h"
 #include "DmpEvtBgoHits.h"
@@ -44,6 +45,7 @@
 #define N_VA        6
 #define N_ETAREG    2        
 #define MINTRACKHITS 6
+#define MINTRACKCLUS 12
 #define N_CHANNEL   384
 
 int GetEtaRegion(double);
