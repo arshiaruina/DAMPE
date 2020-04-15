@@ -135,10 +135,12 @@ int main(int argc, char** argv){
     int nEntriesAfterSelection[nSel];
     int nEntriesAfterSelection1track[nSel];
     TH1I* hNEntriesAfterSelection = new TH1I("hNEntriesAfterSelection","Selections",nSel+1,0,nSel);
-    TH1I* hNTracksNoCuts    = new TH1I("hNTracksNoCuts","No. of tracks with no selection cuts",10,0,10);    
-    TH1I* hNTracks          = new TH1I("hNTracks","No. of tracks that passed all cuts",10,0,10);    
+    TH1I* hNEntriesAfterSelection1track = new TH1I("hNEntriesAfterSelection1track","Selections (1 track events)",nSel+1,0,nSel);
+    //TH1I* hNTracksNoCuts    = new TH1I("hNTracksNoCuts","No. of tracks with no selection cuts",10,0,10);    
+    //TH1I* hNTracks          = new TH1I("hNTracks","No. of tracks that passed all cuts",10,0,10);    
     TH1D* hSmeanX           = new TH1D("hSmeanX","hSmeanX",50,0.,5.);    
     TH1D* hSmeanY           = new TH1D("hSmeanY","hSmeanY",50,0.,5.);    
+    TH1F* hEnergy1stripCluster = new TH1F("hEnergy1stripCluster","Energy for 1-strip clusters",200,0.,200.);    
 
     for(int i = 0; i < nSel; i++){
         nEntriesAfterSelection[i] = 0;
@@ -201,17 +203,17 @@ int main(int argc, char** argv){
                     }
                     if(!stkcluster) continue;
             
-                    float eta = CalcEta(stkcluster);
-                    int etaReg = GetEtaRegion(eta);
-                    int vaNumber = GetVANumber(stkcluster->getFirstStrip(), stkcluster->getLastStrip());
-
-                    if(eta == 0. || eta == 1.) continue;
-                    //if(stkcluster->getNstrip() == 1) continue;
-
-                    if(etaReg < 0) continue;
-                    if(vaNumber < 0) continue;
-
+                    //float eta = CalcEta(stkcluster);
+                    //int etaReg = GetEtaRegion(eta);
+                    //int vaNumber = GetVANumber(stkcluster->getFirstStrip(), stkcluster->getLastStrip());
                     float energy = stkcluster->getEnergy()*cosTheta;
+
+                    //if(eta == 0. || eta == 1.) continue;
+                    //if(stkcluster->getNstrip() == 1) continue;
+                        //hEnergy1stripCluster->Fill(energy);
+
+                    //if(etaReg < 0) continue;
+                    //if(vaNumber < 0) continue;
 
                     if(ixy == 0) {
                         nClusX++;
@@ -224,30 +226,23 @@ int main(int argc, char** argv){
                 } // end of loop over x and y clusters
             } // end of loop over points
 
-            if(nClusX != MINTRACKHITS || nClusY != MINTRACKHITS) {
-                continue;
-            }
-                nTracks[1]++;
+            if(nClusX < MINTRACKHITS || nClusY < MINTRACKHITS) //continue;
+            nTracks[1]++;
 
             ////// Tight criteria from track quality requirements /////
-            if(chisqndof > 15.) {
-                continue;
-            }
-                nTracks[2]++;
-            if(!(stktrack->getImpactPointHasX()) || !(stktrack->getImpactPointHasY()) || nonoverlaps > 0) {
-                continue;
-            }
-                nTracks[3]++;
-            if(nholes > 0) {
-                continue;
-            }
-                nTracks[4]++;
+            if(chisqndof > 15.) continue;
+            nTracks[2]++;
+            
+            if(!(stktrack->getImpactPointHasX()) || !(stktrack->getImpactPointHasY()) || nonoverlaps > 0) continue;
+            nTracks[3]++;
+            
+            if(nholes > 0) continue;
+            nTracks[4]++;
+
             /////////////////////
 
-            if(stktrack->getNhitXY() < MINTRACKHITS) {
-                continue;
-            }
-                nTracks[5]++;
+            if(stktrack->getNhitXY() < MINTRACKHITS) continue;
+            nTracks[5]++;
 
             sMeanX = std::sqrt(sMeanX/nClusX/60.);
             sMeanY = std::sqrt(sMeanY/nClusY/60.);
@@ -299,25 +294,21 @@ int main(int argc, char** argv){
             nEntriesAfterSelection[6]++;
         if(nTracks[6]==1)
             nEntriesAfterSelection1track[6]++;
-        
-/*
-        //Selection 3: Event whose tracks passed all cluster requirements
+       
+        /////////////////////////////////////////////////////////////
+
         if(vSelectedTracks.size()==0) {
-            std::cout << "None of the tracks for event " << ientry << " passed the selection cuts!" << std::endl;
-            continue;
+            //std::cout << "None of the tracks for event " << ientry << " passed the selection cuts!" << std::endl;
         }
-        else if(vSelectedTracks.size()>0) {
-            nEntriesAfterSelection[3]++;
-            std::cout << "At least 1 track of event " << ientry << " passed all cluster requirements! :) " << std::endl;
+
+        if(vSelectedTracks.size()>0) {
+            //std::cout << "At least 1 track of event " << ientry << " passed all cluster requirements! :) " << std::endl;
         }
         
-        //Selection 4: Event has exactly 1 track
         if(vSelectedTracks.size()==1) {
-            nEntriesAfterSelection[4]++;
-            std::cout << "Event " << ientry << " has exactly one track!!! " << std::endl;
+            //std::cout << "Event " << ientry << " has exactly one track!!! " << std::endl;
         }
-        // else continue;
-    
+    /*
         // if we have a one-track event, we save it!
         nClustersX = vSelectedTracks.at(0).nClustersX;
         nClustersY = vSelectedTracks.at(0).nClustersY;
@@ -376,15 +367,21 @@ int main(int argc, char** argv){
 
     hSmeanX->Write();
     hSmeanY->Write();
-    hNTracks->Write();
+    hEnergy1stripCluster->Write();
+    //hNTracks->Write();
     //hNTracksNoCuts->Write();
-    //hNEntriesAfterSelection->Write();
 
+    hNEntriesAfterSelection -> SetBinContent(1,nEntries);
     for(int i = 0; i < nSel; i++){
-        hNEntriesAfterSelection -> SetBinContent(i+1,nEntriesAfterSelection[i]);
+        hNEntriesAfterSelection -> SetBinContent(i+2,nEntriesAfterSelection[i]);
+    }
+    hNEntriesAfterSelection1track -> SetBinContent(1,nEntries);
+    for(int i = 0; i < nSel; i++){
+        hNEntriesAfterSelection1track -> SetBinContent(i+2,nEntriesAfterSelection1track[i]);
     }
     gStyle->SetOptStat(0);
     hNEntriesAfterSelection->Write();
+    hNEntriesAfterSelection1track->Write();
     outputTree->Write();
     inputFile->Close();
     outputFile->Close();
@@ -392,33 +389,3 @@ int main(int argc, char** argv){
 
     return 0;
 }
-
-// 88 bool myDampeLib::DmpEventSelector::hasSTKtrack(DmpEvent * pev)
-// 89 {
-// 90     TClonesArray * tracks = pev->GetStkKalmanTrackCollection();
-// 91     if (pev->NStkSiCluster () < 1) return false;
-// 92 
-// 93     mNtracks = 0;
-// 94     int best_track_index = 0;
-// 95 
-// 96     for(int i=0; i < pev->NStkKalmanTrack(); i++)
-// 97     {
-// 98     DmpStkTrack * track = (DmpStkTrack*)tracks->ConstructedAt(i);
-// 99     if (mTrackSelector->selected(track, pev)) {
-//100         if (mNtracks == 0) {
-//101         best_track_index = i;
-//102         }
-//103         else
-//104         {
-//105         DmpStkTrack * best_track = (DmpStkTrack*)tracks->ConstructedAt(best_track_index);
-//106         if(mTrackSelector->first_is_better(track, best_track, pev)) {
-//107             best_track_index = i;
-//108         }
-//109         }
-//110         mNtracks++;
-//111     }
-//112     }
-//113     if(mNtracks > 0) mSTKtrack = (DmpStkTrack*)tracks->ConstructedAt(best_track_index);
-//114     return mNtracks > 0;
-//115 }
-
