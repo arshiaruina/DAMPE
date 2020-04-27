@@ -162,10 +162,10 @@ int main() {
         TH1I* hNClusX           = new TH1I("hNClusX","hNClusX",10,0.,10.);    
         TH1I* hNClusY           = new TH1I("hNClusY","hNClusY",10,0.,10.);    
         TH1D* hChiSqNDOF        = new TH1D("hChiSqNDOF","hChiSqNDOF",100,0.,100.);
-        TH1D* hSmeanX           = new TH1D("hSmeanX","hSmeanX",50,0.,5.);    
-        TH1D* hSmeanY           = new TH1D("hSmeanY","hSmeanY",50,0.,5.);    
-        TH1D* hSmeanXAfterSel           = new TH1D("hSmeanXAfterSel","hSmeanXAfterSel",50,0.,5.);    
-        TH1D* hSmeanYAfterSel           = new TH1D("hSmeanYAfterSel","hSmeanYAfterSel",50,0.,5.);    
+        TH1D* hSmeanX           = new TH1D("hSmeanX","hSmeanX",200,0.,5.);    
+        TH1D* hSmeanY           = new TH1D("hSmeanY","hSmeanY",200,0.,5.);    
+        TH1D* hSmeanXAfterSel           = new TH1D("hSmeanXAfterSel","hSmeanXAfterSel",200,0.,5.);    
+        TH1D* hSmeanYAfterSel           = new TH1D("hSmeanYAfterSel","hSmeanYAfterSel",200,0.,5.);    
         TH1F* hEnergy1stripCluster = new TH1F("hEnergy1stripCluster","Energy for 1-strip clusters",200,0.,200.);    
 
         for(int i = 0; i < nSel; i++){
@@ -237,11 +237,13 @@ int main() {
                         float energy = stkcluster->getEnergy()*cosTheta;
 
                         //if(eta == 0. || eta == 1.) continue;
-                        //if(stkcluster->getNstrip() == 1) continue;
+                        if(stkcluster->getNstrip() == 1) continue;
                             //hEnergy1stripCluster->Fill(energy);
 
                         //if(etaReg < 0) continue;
                         //if(vaNumber < 0) continue;
+                    
+                        //NOTE: Here, nClusX and nClusY now become the number of multi strip clusters, not total clusters
 
                         if(ixy == 0) {
                             nClusX++;
