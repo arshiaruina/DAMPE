@@ -36,7 +36,7 @@
 #include "DmpChain.h"
 #include "DmpEvtGlobTrack.h"
 #include "DmpStkTrack.h"
-#include "DmpStkTrackHelper.h"
+//#include "DmpStkTrackHelper.h"
 #include "DmpStkSiCluster.h"
 #include "DmpEvtPsdRec.h"
 #include "DmpStkClusterCalibration.h"
@@ -47,6 +47,7 @@
 #define MINTRACKHITS 6
 #define MINTRACKCLUS 12
 #define N_CHANNEL   384
+#define MAXNTRACKS  10
 
 int GetEtaRegion(double);
 int GetVANumber(int,int);
