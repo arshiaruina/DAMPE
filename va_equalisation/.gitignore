@@ -31,7 +31,8 @@ tmp/
 #*/dir/*
 
 # Unignore all `.jar` in `bin` dir
-#!*/bin/*.jar
+!makefile
+!Makefile
 
 # Ignore all `library.jar` in `bin` dir
 #*/bin/library.jar
