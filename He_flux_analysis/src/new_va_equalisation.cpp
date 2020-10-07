@@ -20,11 +20,41 @@ int main(int argc, char** argv) {
 	sw.Start();
 
 	std::string week = argv[1];
-	std::string inFileName = "/beegfs/users/ruina/VAequalisation/ntuples_201801_201802/merged/" + week + ".root";
+	std::string inFileName = "/beegfs/users/ruina/VAequalisation/testNtuples/merged_180620.root";
+	//std::string inFileName = "/beegfs/users/ruina/VAequalisation/ntuples_201801_201802/merged/" + week + ".root";
 	//std::string inFileName = "/beegfs/users/ruina/VAequalisation/ntuples_201801_201802/DAMPE_2A_OBS_20180102_20180102T064154_20180102T065209_00000_px5VV00AObfsPk9dsoKK.root"; // for example
     TFile *f = new TFile(inFileName.c_str());
     //f->ls();
-	TTree *t = (TTree*)f->Get("MySelectionTree");
+	
+    //---------------------------------------------//
+
+    std::stringstream ss;
+    std::ofstream badChannelList;
+    badChannelList.open("/beegfs/users/ruina/VAequalisation/out/badChannelList.txt");
+
+    ss << "Ladder \t Channel" << std::endl;
+    TH2I *hNoise = (TH2I*)f->Get("hNoiseInfo");
+    for(int iladd=0; iladd<192; iladd++){
+        for(int ich=0; ich<384; ich++){
+            if(hNoise->GetBinContent(ich+iladd*386)){
+                //ss << iladd << "\t" << ich << "\t" << hNoise->GetBin(ich,iladd) << "\t" << ich+iladd*386 << "\t" << hNoise->GetBinContent(ich+iladd*386) << std::endl;
+                ss << iladd << "\t" << ich << "\t" << std::endl;
+            }
+        }
+    }
+    //std::cout << "x axis bins, channels: " << hNoise->GetXaxis()->GetNbins() << std::endl;
+    //std::cout << "y axis bins, ladders: " << hNoise->GetYaxis()->GetNbins() << std::endl;
+
+    badChannelList << ss.str();
+    badChannelList.close();   
+
+    sw.Stop();
+    sw.Print(); 
+    return 0; 
+    //---------------------------------------------//
+
+
+    TTree *t = (TTree*)f->Get("MySelectionTree");
     //t->Print();
 
 	//std::size_t found = inFileName.find_last_of("/");

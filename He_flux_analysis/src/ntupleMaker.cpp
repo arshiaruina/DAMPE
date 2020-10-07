@@ -113,6 +113,8 @@ int main(int argc, char** argv){
     std::ifstream fileList(fileListName.c_str());
     //std::ifstream fileList("/beegfs/users/ruina/VAequalisation/fileList.txt");
 
+    std::cout << "INFO: Reading file list..." << std::endl;
+
     while(getline(fileList,line)) {
 
         std::istringstream fileName(line);   
@@ -126,19 +128,110 @@ int main(int argc, char** argv){
             return 0;
         }
 
+        std::size_t found = inputFileName.find_last_of("/");
+        //std::string outputFileName = "/beegfs/users/ruina/VAequalisation/testNtuples/" + inputFileName.substr(found+1);
+        std::string outputFileName = "/beegfs/users/ruina/VAequalisation/ntuples_201801_201802/" + inputFileName.substr(found+1);
+        TFile* outputFile = new TFile(outputFileName.c_str(),"recreate");
+
+        //-----------------------------------------------------//
+
+        std::cout << "DEBUG: Initialising meta data tree..." << std::endl;
+        int ixk = 0;
+        int const nSTKchannels = 384;
+        int const nSTKladders  = 192;
+        int nLadders = 192, nChannels = 384;
+        float noiseInfo[nSTKladders][nSTKchannels];
+        TH2I* hNoiseInfo = new TH2I("hNoiseInfo","Noise info",384,0,383,192,0,191);
+
+        TTree *calib_tree = (TTree*) inputFile->Get("RunMetadataTree");
+        TClonesArray* stk_ladder_sigmas      = new TClonesArray("DmpStkLadderCalibration");
+        TClonesArray* stk_ladder_pedestals   = new TClonesArray("DmpStkLadderCalibration");
+        TClonesArray* stk_ladder_badchannels = new TClonesArray("DmpStkLadderCalibration");
+        TBranch *b_StkLadderSigmas;   //!
+        TBranch *b_StkLadderPedestals;   //!
+        TBranch *b_StkLadderBadchannels;   //!
+        calib_tree->SetBranchAddress("StkLadderSigmas",     &stk_ladder_sigmas,       &b_StkLadderSigmas);
+        calib_tree->SetBranchAddress("StkLadderPedestals",  &stk_ladder_pedestals ,   &b_StkLadderPedestals);
+        calib_tree->SetBranchAddress("StkLadderBadchannels",&stk_ladder_badchannels , &b_StkLadderBadchannels);
+        cout << "[INFO] Entries in RunMetadataTree " << calib_tree->GetEntries() << endl;
+
+        TTree *outputTreeMeta = new TTree("MyMetaTree","Info on noisy channels");
+        outputTreeMeta->Branch("nLadders", &nLadders, "nLadders/I");
+        outputTreeMeta->Branch("nChannels", &nChannels, "nChannels/I");
+        outputTreeMeta->Branch("noiseInfo", noiseInfo, "noiseInfo[nLadders][nChannels]/F");
+
+        if(calib_tree->GetEntries() != 1) {
+            cout << " calib_tree->GetEntries() = " << calib_tree->GetEntries() << ", not 1, stop!" << endl;
+            exit (EXIT_FAILURE);
+        }
+
+        //-----------------------------------------------------//
+
+
+        for (int ientry = 0; ientry < calib_tree->GetEntries(); ientry++) {
+
+            b_StkLadderSigmas -> GetEntry(ientry);
+            //b_StkLadderPedestals   ->GetEntry(ientry);    
+            b_StkLadderBadchannels ->GetEntry(ientry);
+
+            for (int iladsig = 0; iladsig < stk_ladder_sigmas->GetLast()+1; iladsig++){
+
+                DmpStkLadderCalibration* sigma = (DmpStkLadderCalibration*) (stk_ladder_sigmas->ConstructedAt(iladsig));
+                //int trbID    = sigma-> GetTRBNumber();  
+                int ladderID = sigma->GetLadderID();
+                //cout << " sigma: ladder/ladderID = " << iladsig << "/" << ladderID << endl;
+                //std::cout << "iladsig: " << iladsig << " ladder id " << ladderID << std::endl;
+
+                for(int ich = 0; ich < nSTKchannels; ich++) {
+
+                    int vaNumber = ich/64;
+
+                    double noise = sigma->GetValue(ich);
+                    //if(noise > 5.0) {
+                    //    std::cout << iladsig << "\t" << vaNumber << "\t" << ich << "\t" << noise << std::endl;
+                    //    //noisyChannels[iladsig][ich] = noise;
+                    //}
+                    //noiseInfo[iladsig][ich] = noise;
+                    //if(noise > 5.0) 
+                    //    std::cout << iladsig << "\t" << ich << "\t" << noiseInfo[iladsig][ich] << std::endl;
+                    //std::cout << iladsig << "\t" << vaNumber << "\t" << ich << "\t" << noiseInfo[iladsig][ich] << std::endl;
+                    //int bin= iladsig*384+ich+1;
+                    //std::cout << iladsig << " " << ich << " " << bin << std::endl;
+                    if(noise > 5.0) 
+                        hNoiseInfo->Fill(ich,iladsig);
+                        //hNoiseInfo->SetBinContent(bin,100);
+                    if(noise <= 0) {
+                        cout << " wrong STK noise for ladder " << ladderID << ", channel " << ich << ", noise " << noise << endl;
+                        exit (EXIT_FAILURE);
+                    }
+                }
+            }
+        }
+        hNoiseInfo->SetOption("COLZ");
+        hNoiseInfo->SetContour(20);
+        hNoiseInfo->SetStats(0);
+        //hNoiseInfo->SetMinimum(0.9);
+        //hNoiseInfo->SetMaximum(1.1);
+        hNoiseInfo->Write();
+        outputTreeMeta->Fill();
+        outputTreeMeta->Write();
+
+        //-----------------------------------------------------//
+
         DmpChain *dmpch = new DmpChain("CollectionTree");
         dmpch->Add(inputFileName.c_str());
         dmpch->GetListOfFiles()->Print();
         int nEntries = dmpch->GetEntries();
         //TClonesArray* stkladderadc = Get("DmpStkLadderAdc"); 
         //iinputTree->SetBranchAddress("DmpStkLadderAdcCollection",&stkladderadc);
-        std::size_t found = inputFileName.find_last_of("/");
+        //std::size_t found = inputFileName.find_last_of("/");
         //std::string outputFileName = "/beegfs/users/ruina/VAequalisation/testNtuples/" + inputFileName.substr(found+1);
         //std::cout << outputFileName << std::endl;
         //std::string outputFileName = "/beegfs/users/ruina/VAequalisation/ntuples_20181001_20181009/" + inputFileName.substr(found+1);
-        std::string outputFileName = "/beegfs/users/ruina/VAequalisation/ntuples_201801_201802/" + inputFileName.substr(found+1);
+        //std::string outputFileName = "/beegfs/users/ruina/VAequalisation/ntuples_201801_201802/" + inputFileName.substr(found+1);
+        //std::string outputFileName = "/beegfs/users/ruina/VAequalisation/testNtuples/" + inputFileName.substr(found+1);
         //std::string outputFileName = "/dpnc/beegfs/users/ruina/VAequalisation/ntuples_201801_201802/" + inputFileName.substr(found+1); // for baobab
-        TFile* outputFile = new TFile(outputFileName.c_str(),"recreate");
+        //TFile* outputFile = new TFile(outputFileName.c_str(),"recreate");
         TTree* outputTree = new TTree("MySelectionTree","Selections for VA calibration");
 
         int nClustersX = 0;
@@ -207,11 +300,12 @@ int main(int argc, char** argv){
             nEntriesAfterSelectionMulTrack[i] = 0;
         }
         
+        std::cout << "INFO: Start loop over entries" << std::endl;
         //////////////////////////////////////////////////
         //             Loop over events
         //////////////////////////////////////////////////
         for(int ientry = 0; ientry < nEntries; ++ientry)
-        //for(int ientry = 0; ientry < 150; ++ientry)
+        //for(int ientry = 0; ientry < 50; ++ientry)
         {   
 
             float progress = 100.0 * ((float) ientry) / ((float) nEntries);
