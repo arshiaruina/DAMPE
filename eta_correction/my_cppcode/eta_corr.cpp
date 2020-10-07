@@ -23,7 +23,7 @@ using namespace std;
 using namespace myDampeLib;
 
 class VaAnalysis : public DmpAnalysis {
-public :
+    public :
     VaAnalysis(const char * filename,
                const char * option) :
         DmpAnalysis(filename, option) 
@@ -40,7 +40,7 @@ public :
 
 	/*
 	 * TrackSelector helps selecting the STK tracks
-	 * General syntaxis:
+	 * General syntax is:
 	 *     1.
 	 *     mTrackSelector->setSelectionParameter(value);
 	 *     to setup the selection threshold
@@ -99,104 +99,106 @@ public :
 
 	mTree->Branch("ClustFS", &mClustFS, "mClustFS/I"); // cluster first strip
 	mTree->Branch("ClustLS", &mClustLS, "mClustLS/I"); // cluster last strip
-        mTree->Branch("ClustE", &mClustE, "mClustE[10]/F"); // array of strip energies in cluster, max 10 values
+    mTree->Branch("ClustE", &mClustE, "mClustE[10]/F"); // array of strip energies in cluster, max 10 values
 
 	mTree->Branch("ClustEta", &mClustEta, "mClustEta/F"); // cluster eta
 	mTree->Branch("ClustVA", &mClustVA, "mClustVA/I"); // cluster VA
  
-	mTree->SetDirectory(0);
+	mTree->Branch("ThetaX", &mThetaX, "mThetaX/F"); // theta_x at a given point on the track
+	mTree->Branch("ThetaY", &mThetaY, "mThetaY/F"); // theta_y at a given point on the track
+	mTree->Branch("Direction", &mDirection, "mDirection[3]/F"); // global inclination of the track, x, y and z components
+	
+    mTree->SetDirectory(0);
     } 
 
     void createHists() {
 	;
     }
 
+    float radianToDegree(float rad){
+        return (rad * 180./M_PI);
+    }
+
     void analyseOneEvent(DmpEvent * pev)
     {   
-    // Event selection
-	mSelected = mEventSelector->selected(pev);
-	if (!mSelected) {
-	    return;
-	}
-
-    // STK track
-	DmpStkTrack * stktrack = mEventSelector->stkTrack();
-	TClonesArray * stkclusters = pev->GetStkSiClusterCollection();
-
-    // Loop over the STK clusters
-	// cout << "Before cluster loop" << endl;
-	mCosTheta = stktrack->getDirection().CosTheta();
-	for (int ipoint=0; ipoint<stktrack->GetNPoints(); ipoint++) {
-        for (int ixy=0; ixy<2; ixy++) {
-            // Check if cluster is associated to a hit
-		    DmpStkSiCluster* cluster;
-		    if(ixy == 0)
-		        cluster = stktrack -> GetClusterX(ipoint, stkclusters);
-		    else
-		        cluster = stktrack -> GetClusterY(ipoint, stkclusters);
-		    if(!cluster) continue;
-
-            //------- checks to get theta x and theta y -----//
-           
-            float rad2deg = 180./M_PI;
-            TVector3 v = stktrack->getDirection();
-            float a = v.Mag() * v.CosTheta();
-            float a1 = v.Mag();
-            float a2 = v.CosTheta();
-            //float b = v.X() * stktrack->getSlopeX(ipoint);
-            float b = rad2deg * atan(stktrack->getSlopeX(ipoint));
-            //float c = v.Y() * stktrack->getSlopeY(ipoint);
-            float c = rad2deg * atan(v.X() / v.Z());
-            float d = rad2deg * atan(stktrack->getTrackParams().getSlopeX());
-            float z = v.Z();
-            cout << "a: " << a << " b: " << b << " c: " << c << " d: " << d << " z: " << z << endl;
-
-            //-----------------------------------------------//
-
-            // get cluster energy
-            for(int i = 0; i < 10; i++) {
-                mClustE[i] = 0.;
-            }
-            for(int i = 0; i < cluster->getNstrip(); i++) {
-                if (i < 10) {
-                    mClustE[i] = cluster->GetSignal(i);
-                }
-            }
-
-		    //ladder num
-		    int ilad = cluster->getLadderHardware();
-		    //VA num
-		    int iva = -1;
-		    mClustFS = cluster->getFirstStrip();
-		    mClustLS = cluster->getLastStrip();
-		    for(int i = 0; i < NVA; i++) {
-		        if(mClustFS >= i * 64 && mClustLS < (i + 1) * 64) {
-		    	iva = i;
-		    	break;
-		        }
-		    }
-		    mClustVA = iva;
-		    if (iva > NVA || iva < 0) continue;
-
-		    // Get cluster energy
-		    mClustETot = cluster->getEnergy();
-
-		    // Get eta
-		    mClustEta = mEtaCorr.calcEta(cluster);
-
-		    // mSelected is a special variable. Set it to false to do not call mTree->Fill() again at the end of the event loop
-		    mSelected=false;
-
-		    // set mInterestingEvent to true for the events which you want to see on the event display
-		    mInterestingEvent=false;
-
-		    // Fill the tree for each cluster separately
-		    this->mTree->Fill();
+        // Event selection
+	    mSelected = mEventSelector->selected(pev);
+	    if (!mSelected) {
+	        return;
 	    }
-	}
-}
 
-private :
+        // STK track
+	    DmpStkTrack * stktrack = mEventSelector->stkTrack();
+	    TClonesArray * stkclusters = pev->GetStkSiClusterCollection();
+
+        // Loop over the STK clusters
+	    // cout << "Before cluster loop" << endl;
+	    
+	    TVector3 direction = stktrack->getDirection();
+	    mCosTheta = direction.CosTheta();
+
+        for(int icomp=0; icomp<3; icomp++){
+	        mDirection[icomp] = direction(icomp);
+        }
+        
+        for (int ipoint=0; ipoint<stktrack->GetNPoints(); ipoint++) {
+            for (int ixy=0; ixy<2; ixy++) {
+                // Check if cluster is associated to a hit
+	    	    DmpStkSiCluster* cluster;
+	    	    if(ixy == 0)
+	    	        cluster = stktrack -> GetClusterX(ipoint, stkclusters);
+	    	    else
+	    	        cluster = stktrack -> GetClusterY(ipoint, stkclusters);
+	    	    if(!cluster) continue;
+
+                mThetaX = radianToDegree(atan(stktrack->getSlopeX(ipoint)));
+                mThetaY = radianToDegree(atan(stktrack->getSlopeY(ipoint)));
+
+                // get cluster energy
+                for(int i = 0; i < 10; i++) {
+                    mClustE[i] = 0.;
+                }
+                for(int i = 0; i < cluster->getNstrip(); i++) {
+                    if (i < 10) {
+                        mClustE[i] = cluster->GetSignal(i);
+                    }
+                }
+
+	    	    //ladder num
+	    	    int ilad = cluster->getLadderHardware();
+	    	    //VA num
+	    	    int iva = -1;
+	    	    mClustFS = cluster->getFirstStrip();
+	    	    mClustLS = cluster->getLastStrip();
+	    	    for(int i = 0; i < NVA; i++) {
+	    	        if(mClustFS >= i * 64 && mClustLS < (i + 1) * 64) {
+	    	    	iva = i;
+	    	    	break;
+	    	        }
+	    	    }
+	    	    mClustVA = iva;
+	    	    if (iva > NVA || iva < 0) continue;
+
+	    	    // Get cluster energy
+	    	    mClustETot = cluster->getEnergy();
+
+	    	    // Get eta
+	    	    mClustEta = mEtaCorr.calcEta(cluster);
+
+	    	    // mSelected is a special variable. Set it to false to do not call mTree->Fill() again at the end of the event loop
+	    	    mSelected=false;
+
+	    	    // set mInterestingEvent to true for the events which you want to see on the event display
+	    	    mInterestingEvent=false;
+
+	    	    // Fill the tree for each cluster separately
+	    	    this->mTree->Fill();
+	        }
+	    }
+    }
+
+    private :
+    
     bool mMC;
 
     float mClustETot;
@@ -206,6 +208,9 @@ private :
     float mClustE[10];
     float mClustEta;
     int mClustVA;
+    float mThetaX;
+    float mThetaY;
+    float mDirection[3];
 
     DmpEventSelector * mEventSelector;
     DmpTrackSelector * mTrackSelector;
