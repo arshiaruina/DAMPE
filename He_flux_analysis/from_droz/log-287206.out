@@ -1,9 +1,0 @@
-Fri Jun 7 15:29:26 CEST 2019 - This is atlas078.unige.ch, executing task
-Sourcing CentOS7
-DAMPE software setup - core
-DmpBuild: /cvmfs/dampe.cern.ch/centos7/opt/DMPSW/DmpSoftware-6-0-4
-Fontconfig warning: ignoring UTF-8: not a valid region tag
-DmpEvent::GetHead::Creating-DmpEvent-As-Singleton
-DmpEvent::InitHead
-DmpChain::GetDmpEvent::RecognizedAs::Simu
-Fri Jun 7 15:30:00 CEST 2019 - All done.
