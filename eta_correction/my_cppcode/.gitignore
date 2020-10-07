@@ -1,0 +1,41 @@
+# Ignore all
+*
+
+# Unignore all with extensions
+!*.*
+
+# Unignore all dirs
+!*/
+
+### Above combination will ignore all files without extension ###
+
+# Ignore files with extension `.root` & `.out`
+*.root
+*.dat
+*.err
+*.out
+*.o
+*.txt
+*.png
+*.pdf
+*.xml
+*.*~
+
+
+# Ignore `bin` dir
+/Results
+#*/dir/*
+
+# Unignore all `.jar` in `bin` dir
+!makefile
+!Makefile
+
+# Ignore all `library.jar` in `bin` dir
+#*/bin/library.jar
+
+# Ignore a file with extension
+#relative/path/to/dir/filename.extension
+
+# Ignore a file without extension
+#relative/path/to/dir/anotherfile
+
