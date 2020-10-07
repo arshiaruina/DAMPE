@@ -41,7 +41,7 @@ using namespace std;
 
 int main( int argc , char *argv[]){
 
-    if (argc < 4) {
+    if (argc < 3) {
         cerr << "Usage: " << argv[0] << " <file_in.txt> <file_out.root> [Nev]" << endl;
 	cerr << "\t <file_in.txt> -- name of file with the list of root files to analyse" << endl;
 	cerr << "\t <file_out.root> -- name of the output root file" << endl;
@@ -51,7 +51,7 @@ int main( int argc , char *argv[]){
 
     char * filelist = argv[1];
     char * outfile = argv[2];
-    int nToRun = argc==5? atoi(argv[3]) : -1; // negative = run all
+    int nToRun = argc==4 ? atoi(argv[3]) : -1; // negative = run all
 
     VaAnalysis * va_analysis = new VaAnalysis(outfile, "RECREATE");
     va_analysis->setTChain(filelist, true);
