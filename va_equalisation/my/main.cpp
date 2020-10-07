@@ -42,7 +42,7 @@ using namespace std;
 int main( int argc , char *argv[]){
 
     if (argc < 4) {
-        cerr << "Usage: " << argv[0] << " <file_in.txt> <file_out.root> <0-1> <corr.root> [Nev]" << endl;
+        cerr << "Usage: " << argv[0] << " <file_in.txt> <file_out.root> <0 / corr.root> [Nev]" << endl;
 	cerr << "\t <file_in.txt> -- name of file with the list of root files to analyse" << endl;
 	cerr << "\t <file_out.root> -- name of the output root file" << endl;
 	cerr << "\t <corr.root> -- provide the name of file with correction coeffs, "
@@ -57,7 +57,6 @@ int main( int argc , char *argv[]){
     bool calc_corr = strcmp(corr, "0") == 0;
 
     int nToRun = argc==5? atoi(argv[4]) : -1; // negative = run all
-
     VaAnalysis * va_analysis = new VaAnalysis(outfile, "RECREATE");
     va_analysis->setTChain(filelist, true);
     va_analysis->addTTree();
