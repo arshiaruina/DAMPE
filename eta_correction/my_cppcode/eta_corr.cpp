@@ -24,10 +24,11 @@ using namespace myDampeLib;
 
 class VaAnalysis : public DmpAnalysis {
     public :
-    VaAnalysis(const char * filename,
-               const char * option) :
-        DmpAnalysis(filename, option) 
+    VaAnalysis(const char * filename, const char * option) : DmpAnalysis(filename, option) 
     {
+
+        mEtaCorr.setTargetParameters(64.27, 6., 257.75, 6.*257.75/64.27);
+
         mEventSelector = new DmpEventSelector();
 
         if(access( "bad_chan_201801.txt", F_OK ) != -1) {
@@ -81,34 +82,36 @@ class VaAnalysis : public DmpAnalysis {
         mEventSelector->addSelect(DmpEventSelector::has_STK_track);
         // mEventSelector->addSelect(DmpEventSelector::has_only_one_STK_track);
 
-	mTree = NULL;
+	    mTree = NULL;
     }
 
     ~VaAnalysis() {
-	mOutputFile->cd();
-	mEventSelector->hSelect()->Write();
-	closeOutputFile();
-	delete mEventSelector;
+	    mOutputFile->cd();
+	    mEventSelector->hSelect()->Write();
+	    closeOutputFile();
+	    delete mEventSelector;
     }
 
     void addTTree() {
-	mTree = new TTree("T", "Cluster information tree");
+	    mTree = new TTree("T", "Cluster information tree");
 
-	mTree->Branch("ClustETot", &mClustETot, "mClustETot/F"); // cluster total signal, no theta correction
-	mTree->Branch("CosTheta", &mCosTheta, "mCosTheta/F"); // cos(theta) of the track
+        mTree->Branch("BGOenergy", &mBGOenergy, "mBGOenergy/F");	 
+        mTree->Branch("PSDenergy", &mPSDenergy, "mPSDenergy[2]/F");
+	    
+        mTree->Branch("CosTheta", &mCosTheta, "mCosTheta/F"); // cos(theta) of the track
+	    mTree->Branch("Direction", &mDirection, "mDirection[3]/F"); // global inclination of the track, x, y and z components
+	    mTree->Branch("ThetaX", &mThetaX, "mThetaX/F"); // theta_x at a given point on the track
+	    mTree->Branch("ThetaY", &mThetaY, "mThetaY/F"); // theta_y at a given point on the track
+	    
+        mTree->Branch("ClustE", &mClustE, "mClustE[10]/F"); // array of strip energies in cluster, max 10 values
+        mTree->Branch("ClustFS", &mClustFS, "mClustFS/I"); // cluster first strip
+	    mTree->Branch("ClustLS", &mClustLS, "mClustLS/I"); // cluster last strip
+        mTree->Branch("ClustVA", &mClustVA, "mClustVA/I"); // cluster VA
+	    mTree->Branch("ClustETot", &mClustETot, "mClustETot/F"); // cluster total signal, no correction
+        mTree->Branch("ClustEta", &mClustEta, "mClustEta/F"); // cluster eta
+	    mTree->Branch("ClustETotCorr", &mClustETotCorr, "mClustETotCorr/F"); // cluster total signal, with eta correction
 
-	mTree->Branch("ClustFS", &mClustFS, "mClustFS/I"); // cluster first strip
-	mTree->Branch("ClustLS", &mClustLS, "mClustLS/I"); // cluster last strip
-    mTree->Branch("ClustE", &mClustE, "mClustE[10]/F"); // array of strip energies in cluster, max 10 values
-
-	mTree->Branch("ClustEta", &mClustEta, "mClustEta/F"); // cluster eta
-	mTree->Branch("ClustVA", &mClustVA, "mClustVA/I"); // cluster VA
- 
-	mTree->Branch("ThetaX", &mThetaX, "mThetaX/F"); // theta_x at a given point on the track
-	mTree->Branch("ThetaY", &mThetaY, "mThetaY/F"); // theta_y at a given point on the track
-	mTree->Branch("Direction", &mDirection, "mDirection[3]/F"); // global inclination of the track, x, y and z components
-	
-    mTree->SetDirectory(0);
+        mTree->SetDirectory(0);
     } 
 
     void createHists() {
@@ -123,16 +126,24 @@ class VaAnalysis : public DmpAnalysis {
     {   
         // Event selection
 	    mSelected = mEventSelector->selected(pev);
-	    if (!mSelected) {
-	        return;
-	    }
+	    if (!mSelected) return;
+
+        // BGO energy
+        DmpEvtBgoRec * bgoRec = pev->pEvtBgoRec();
+        mBGOenergy = (float)(bgoRec->GetTotalEnergy());
 
         // STK track
 	    DmpStkTrack * stktrack = mEventSelector->stkTrack();
 	    TClonesArray * stkclusters = pev->GetStkSiClusterCollection();
 
-        // Loop over the STK clusters
-	    // cout << "Before cluster loop" << endl;
+        // PSD
+        DmpEvtPsdHits *psdHits = pev->pEvtPsdHits();
+        int * ibar1 = new int(-1);
+        int * ibar2 = new int(-1);
+        mPSDenergy[0] = psdEnergy(stktrack, psdHits, ibar1, mMC, 1);
+        mPSDenergy[1] = psdEnergy(stktrack, psdHits, ibar2, mMC, 2);
+        delete ibar1;
+        delete ibar2;
 	    
 	    TVector3 direction = stktrack->getDirection();
 	    mCosTheta = direction.CosTheta();
@@ -141,6 +152,7 @@ class VaAnalysis : public DmpAnalysis {
 	        mDirection[icomp] = direction(icomp);
         }
         
+        // Loop over the STK clusters
         for (int ipoint=0; ipoint<stktrack->GetNPoints(); ipoint++) {
             for (int ixy=0; ixy<2; ixy++) {
                 // Check if cluster is associated to a hit
@@ -185,6 +197,12 @@ class VaAnalysis : public DmpAnalysis {
 	    	    // Get eta
 	    	    mClustEta = mEtaCorr.calcEta(cluster);
 
+                // Eta correction
+                //int index = ixy + (cluster->getPlane()) * 2;
+                //cout << "ixy: " << ixy << " plane: " << cluster->getPlane() << " index: " << index << endl;
+                float theta = (ixy==0) ? mThetaX : mThetaY;           
+                mClustETotCorr = mEtaCorr.corrEnergy(mClustETot, mClustEta, theta);
+
 	    	    // mSelected is a special variable. Set it to false to do not call mTree->Fill() again at the end of the event loop
 	    	    mSelected=false;
 
@@ -201,16 +219,19 @@ class VaAnalysis : public DmpAnalysis {
     
     bool mMC;
 
-    float mClustETot;
+    float mBGOenergy;    
+    float mPSDenergy[NPSDL];
     float mCosTheta;
-    int mClustFS;
-    int mClustLS;
-    float mClustE[10];
-    float mClustEta;
-    int mClustVA;
+    float mDirection[3];
     float mThetaX;
     float mThetaY;
-    float mDirection[3];
+    float mClustE[10];
+    int mClustFS;
+    int mClustLS;
+    int mClustVA;
+    float mClustETot;
+    float mClustEta;
+    float mClustETotCorr;
 
     DmpEventSelector * mEventSelector;
     DmpTrackSelector * mTrackSelector;
@@ -239,6 +260,5 @@ class VaAnalysis : public DmpAnalysis {
  *   - bgo_energy
  *
  * */
-
 
 #endif
