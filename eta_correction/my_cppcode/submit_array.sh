@@ -4,8 +4,8 @@
 #SBATCH --nodes=1
 #SBATCH --partition=centos7
 #SBATCH --export=ALL
-#SBATCH --output=job_%j.out
-#SBATCH --error=job_%j.err
+#SBATCH --output=job_logs/job_%j.out
+#SBATCH --error=job_logs/job_%j.err
 
 # Extract Nlines from the file list to a temporary file
 FILETOANALYSE=`pwd`/$(basename -- $FILELIST .txt)_$SLURM_ARRAY_TASK_ID.txt
