@@ -193,7 +193,7 @@ void LangauFit(string inFileName, string outFileName){
     cout << "inside LangauFit" << endl;
     cout << "debug 1" << endl;
 
-    float BGOenergybins[]={0.02, 0.10, 0.25, 0.50, 1., 5.}; // TeV, hard-coded according to skim ranges
+    float BGOenergybins[]={2.0e4, 1.0e5, 2.5e5, 5.0e5, 1.0e6, 5.0e6}; // MeV, hard-coded according to skim ranges
     int BGOenergyNbins = 6;
     TH1D* hClustETot[BGOenergyNbins];
     TH1D* hClustETotCorr[BGOenergyNbins];
@@ -215,12 +215,14 @@ void LangauFit(string inFileName, string outFileName){
     TFile *outFile = new TFile(outFileName.c_str(), "RECREATE"); 
 
     TTree *tree = (TTree*) inFile->Get("T");
-    tree->Print();
+    //tree->Print();
 
+    float PSDenergy = 0.;
     float BGOenergy = 0.;
     float ClustETot = 0.;
     float ClustETotCorr = 0.;
 
+    tree->SetBranchAddress("PSDenergy",&PSDenergy);
     tree->SetBranchAddress("BGOenergy",&BGOenergy);
     tree->SetBranchAddress("ClustETot",&ClustETot);
     tree->SetBranchAddress("ClustETotCorr",&ClustETotCorr);
@@ -233,16 +235,29 @@ void LangauFit(string inFileName, string outFileName){
     
         tree->GetEntry(ientry);
 
+        //if((BGOenergy > BGOenergybins[0]) && (BGOenergy < BGOenergybins[1])) cout << "bin 0" << endl;
+        //if((BGOenergy > BGOenergybins[1]) && (BGOenergy < BGOenergybins[2])) cout << "bin 1" << endl;
+        //if((BGOenergy > BGOenergybins[2]) && (BGOenergy < BGOenergybins[3])) cout << "bin 2" << endl;
+        //if((BGOenergy > BGOenergybins[3]) && (BGOenergy < BGOenergybins[4])) cout << "bin 3" << endl;
+        //if((BGOenergy > BGOenergybins[4]) && (BGOenergy < BGOenergybins[5])) cout << "bin 4" << endl;
+        //if((BGOenergy > BGOenergybins[5])) cout << "bin 5" << endl;
+
+        //for (int ibin=0; ibin<BGOenergyNbins; ibin++){
+        //    cout << ibin << "  " << BGOenergybins[ibin] << endl;
+        //}
+        
+        //PSD cut
+        if(PSDenergy > 20.) continue;
+
         for (int ibin=0; ibin<BGOenergyNbins; ibin++){
             if(ibin < BGOenergyNbins-1){
-                if((BGOenergy > BGOenergybins[ibin]*1e6) && (BGOenergy < BGOenergybins[ibin+1]*1e6)){
-                    cout << "what!!! " << BGOenergy << endl;
-                    hClustETot[ibin]->Fill(ClustETot);
+                if((BGOenergy > BGOenergybins[ibin]) && (BGOenergy < BGOenergybins[ibin+1])){
+                    hClustEPSD[ibin]->Fill(ClustETot);
                     hClustETotCorr[ibin]->Fill(ClustETotCorr);
                 }
             }
             else { //last bin
-                if(BGOenergy > BGOenergybins[ibin]*10e6){
+                if(BGOenergy > BGOenergybins[ibin]){
                     hClustETot[ibin]->Fill(ClustETot);
                     hClustETotCorr[ibin]->Fill(ClustETotCorr);
                 }
@@ -269,7 +284,8 @@ void LangauFit(string inFileName, string outFileName){
         cout << "checkpoint 1" << endl;
 
         TH1D *hist = hClustETot[ibin];
-        if(hist->GetEntries() == 0) continue;
+        int nEntries = hist->GetEntries();
+        if(nEntries == 0) continue;
 
         // --- Proton Peak --- //
 
@@ -283,10 +299,14 @@ void LangauFit(string inFileName, string outFileName){
 
         // Setting fit range and start values
         double fr0[2], sv0[4], pllo0[4], plhi0[4];
-        fr0[0] = 20.;      fr0[1] = 120.;
-        sv0[0]=40;      sv0[1]=60.0;    sv0[2]=20000.0;       sv0[3]=10.0;
-        pllo0[0]=20;    pllo0[1]=40.0;  pllo0[2]=1.0;         pllo0[3]=0.;
-        plhi0[0]=60;   plhi0[1]=80.0;  plhi0[2]=1000000.0;   plhi0[3]=20.;
+        fr0[0] = 20.;      fr0[1] = 100.;
+        sv0[0]=10.; pllo0[0]=1.; plhi0[0]=20.; //Landau width
+        sv0[1]=60.; pllo0[1]=40.0; plhi0[1]=80.0; // Landau MPV
+        //int binmax = G->GetHistogram()->GetMaximumBin();
+        //double xMax = G->GetXaxis()->GetBinCenter(binmax);
+        hist->GetXaxis()->SetRange(fr0[0],fr0[1]);
+        sv0[2] = 2 * hist->GetMaximum(); pllo0[2]=1.0; plhi0[2]=nEntries/2.; //Area
+        sv0[3]=10.0; pllo0[3]=0.; plhi0[3]=20.; // Conv Gauss width
         
         // Return values
         double fp0[4], fpe0[4];
@@ -310,10 +330,14 @@ void LangauFit(string inFileName, string outFileName){
         
         // Setting fit range and start values
         double fr1[2], sv1[4], pllo1[4], plhi1[4];
-        fr1[0] = 220.;   fr1[1] = 380.;
-        sv1[0] = 80;        sv1[1] = 250.;        sv1[2] = 10000;       sv1[3] = 10.;
-        pllo1[0] = 60.;    pllo1[1] = 230.;      pllo1[2] = 1.0;     pllo1[3] = 0.;
-        plhi1[0] = 100.;    plhi1[1] = 270.;      plhi1[2] = 1e6;     plhi1[3] = 20.;
+        fr1[0] = 230.;      fr1[1] = 380.;
+        sv1[0]=30.; pllo1[0]=20.; plhi1[0]=40.; //Landau width
+        sv1[1]=250.; pllo1[1]=230.; plhi1[1]=270.0; // Landau MPV
+        //int binmax = G->GetHistogram()->GetMaximumBin();
+        //double xMax = G->GetXaxis()->GetBinCenter(binmax);
+        hist->GetXaxis()->SetRange(fr1[0],fr1[1]);
+        sv1[2] = 2 * hist->GetMaximum(); pllo1[2]=1.0; plhi1[2]=nEntries/2.; //Area
+        sv1[3]=10.0; pllo1[3]=0.; plhi1[3]=20.; // Conv Gauss width
         
         // Return values
         double fp1[4], fpe1[4];
@@ -326,6 +350,7 @@ void LangauFit(string inFileName, string outFileName){
         double SNRPeak1, SNRFWHM1;
         langaupro(fp1,SNRPeak1,SNRFWHM1);
 
+        hist->GetXaxis()->SetRange(0,500);
         cout << "checkpoint 2" << endl;
 
         //c1[iladder][iva] = new TCanvas(histName.c_str(),histName.c_str(),800,600);
@@ -397,7 +422,8 @@ void LangauFit(string inFileName, string outFileName){
     for (int ibin=0; ibin<BGOenergyNbins; ibin++){
 
         TH1D *hist = hClustETotCorr[ibin];
-        if(hist->GetEntries() == 0) continue;
+        int nEntries = hist->GetEntries();
+        if(nEntries == 0) continue;
         
         // --- Proton Peak --- //
 
@@ -407,14 +433,19 @@ void LangauFit(string inFileName, string outFileName){
         //std::cout << "hist std dev " << hist->GetStdDev() << std::endl;
         //std::cout << "hist mean " << hist->GetMean() << std::endl;
         //std::cout << "hist integral " << hist->Integral() << std::endl;
-        
+       
+
         // Setting fit range and start values
         double fr0[2], sv0[4], pllo0[4], plhi0[4];
-        fr0[0] = 20.;      fr0[1] = 120.;
-        sv0[0]=40;      sv0[1]=60.0;    sv0[2]=20000.0;       sv0[3]=10.0;
-        pllo0[0]=20;    pllo0[1]=40.0;  pllo0[2]=1.0;         pllo0[3]=0.;
-        plhi0[0]=60;   plhi0[1]=80.0;  plhi0[2]=1000000.0;   plhi0[3]=20.;
-
+        fr0[0] = 20.;      fr0[1] = 100.;
+        sv0[0]=10.; pllo0[0]=1.; plhi0[0]=20.; //Landau width
+        sv0[1]=60.; pllo0[1]=40.0; plhi0[1]=80.0; // Landau MPV
+        //int binmax = G->GetHistogram()->GetMaximumBin();
+        //double xMax = G->GetXaxis()->GetBinCenter(binmax);
+        hist->GetXaxis()->SetRange(fr0[0],fr0[1]);
+        sv0[2] = 2 * hist->GetMaximum(); pllo0[2]=1.0; plhi0[2]=nEntries/2.; //Area
+        sv0[3]=10.0; pllo0[3]=0.; plhi0[3]=20.; // Conv Gauss width
+        
         // Return values
         double fp0[4], fpe0[4];
         double chisqr0;
@@ -434,13 +465,17 @@ void LangauFit(string inFileName, string outFileName){
         //std::cout << "hist std dev " << hist->GetStdDev() << std::endl;
         //std::cout << "hist mean " << hist->GetMean() << std::endl;
         //std::cout << "hist integral " << hist->Integral() << std::endl;
-        
+       
         // Setting fit range and start values
         double fr1[2], sv1[4], pllo1[4], plhi1[4];
-        fr1[0] = 220.;   fr1[1] = 380.;
-        sv1[0] = 80;       sv1[1] = 250.;        sv1[2] = 10000;       sv1[3] = 10.;
-        pllo1[0] = 60.;    pllo1[1] = 230.;      pllo1[2] = 1.0;     pllo1[3] = 0.;
-        plhi1[0] = 100.;    plhi1[1] = 270.;      plhi1[2] = 1e6;     plhi1[3] = 20.;
+        fr1[0] = 230.;      fr1[1] = 380.;
+        sv1[0]=30.; pllo1[0]=10.; plhi1[0]=50.; //Landau width
+        sv1[1]=250.; pllo1[1]=230.; plhi1[1]=270.0; // Landau MPV
+        //int binmax = G->GetHistogram()->GetMaximumBin();
+        //double xMax = G->GetXaxis()->GetBinCenter(binmax);
+        hist->GetXaxis()->SetRange(fr1[0],fr1[1]);
+        sv1[2] = 2 * hist->GetMaximum(); pllo1[2]=1.0; plhi1[2]=nEntries/2.; //Area
+        sv1[3]=10.0; pllo1[3]=0.; plhi1[3]=20.; // Conv Gauss width
         
         // Return values
         double fp1[4], fpe1[4];
@@ -452,6 +487,8 @@ void LangauFit(string inFileName, string outFileName){
         
         double SNRPeak1, SNRFWHM1;
         langaupro(fp1,SNRPeak1,SNRFWHM1);
+
+        hist->GetXaxis()->SetRange(0,500);
 
         //c1[iladder][iva] = new TCanvas(histName.c_str(),histName.c_str(),800,600);
         //if(countVA==0){ // open pdf
